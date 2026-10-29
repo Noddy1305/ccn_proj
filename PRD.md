@@ -1,6 +1,6 @@
 # PhishGuard-AI — Product Requirements Document
 
-Kaustubh Guha, Rudraksh Dubey · last updated Oct 28, 2026
+Kaustubh Guha, Rudraksh Dubey · last updated Oct 29, 2026 (v1.1: reflects sessions 1-4 as built; see section 15)
 
 ## 1. Overview
 
@@ -18,7 +18,7 @@ PhishGuard-AI is a laptop-based web tool that takes one suspicious email and ret
 | Team | Kaustubh Guha (RA2311004010296), Rudraksh Dubey (RA2311004010282) |
 | Full title | PhishGuard-AI: An LLM-Augmented Multi-Layer Framework for Phishing Email Detection and Automated Threat Reporting |
 | Platform | Runs locally on a laptop (Ubuntu); no extra hardware |
-| Status | 0th review slides done; build not started |
+| Status | Sessions 1-3 done (M1, M2, M3); session 4 partly done (M6 scoring built; M5 tone and M7 report not yet). See section 11 and section 15. |
 
 ## 2. Goals, non-goals and success criteria
 
@@ -105,16 +105,16 @@ Proves whether the email really came from the domain it claims.
 - FR-2.2 DKIM: verify the DKIM signature using the public key published in DNS. Result: pass / fail / none.
 - FR-2.3 DMARC: look up the domain's DMARC policy (none / quarantine / reject) and check alignment between the From domain and the SPF/DKIM domains.
 - FR-2.4 If a live check cannot run (for example, the signature was broken by forwarding), fall back to the receiving server's Authentication-Results header and label the result "reported by mail server".
-- FR-2.5 Flag when the Reply-To or Return-Path domain differs from the From domain.
+- FR-2.5 Flag when the Reply-To or Return-Path domain differs from the From domain. *As built:* a different Reply-To is always flagged; a different Return-Path is flagged only when DMARC did not pass, because genuine mail often uses a sending service's bounce address (e.g. YouTube mail sent by Google). Domains are compared at organisational level (`mail.srmist.edu.in` = `srmist.edu.in`).
 
 ### M3 — Link and domain check
 
 Finds where each link really goes and whether that destination is trustworthy.
 
-- FR-3.1 For each unique link domain, compare against a trusted-domain list (top sites + Indian banks, government and university domains) and flag lookalikes within edit distance 1–2 (for example srmlst.edu.in vs srmist.edu.in).
-- FR-3.2 Detect brand names inside unrelated domains (combosquatting, e.g. srmist-verify.com).
+- FR-3.1 For each unique link domain, compare against a trusted-domain list (top sites + Indian banks, government and university domains) and flag lookalikes within edit distance 1–2 (for example srmlst.edu.in vs srmist.edu.in). *As built:* distance 2 counts only for domains of 10+ characters, and the name part must be at least 6 letters, to avoid false alarms (kodak/kotak). Lookalikes hidden inside a subdomain (srmlst.edu.in.verify-login.com) are also checked.
+- FR-3.2 Detect brand names inside unrelated domains (combosquatting, e.g. srmist-verify.com). *As built:* brands are taken from the trusted list; everyday-word names (live, office, zoom, uber, …) are excluded.
 - FR-3.3 Look up domain age via WHOIS; flag domains younger than 30 days (high) and 180 days (medium).
-- FR-3.4 Flag links whose visible text shows one domain but whose href points to another.
+- FR-3.4 Flag links whose visible text shows one domain but whose href points to another. *As built:* not flagged when both domains are on the trusted list.
 - FR-3.5 Flag links that use a raw IP address instead of a domain name.
 - FR-3.6 Resolve DNS (A and MX records) and flag domains that do not resolve.
 - FR-3.7 Never open, click or download the link's page content.
@@ -191,7 +191,7 @@ The verdict comes from adding fixed points for each red flag; the LLM's tone sco
 | Sender | DKIM signature present but invalid | 20 |
 | Sender | SPF softfail | 10 |
 | Sender | Reply-To / Return-Path domain differs from From | 10 |
-| Sender | No SPF, DKIM or DMARC at all | 5 each |
+| Sender | No SPF, DKIM or DMARC at all | 5 each (each missing mechanism adds 5) |
 | Link | Lookalike of a trusted domain (edit distance 1–2) | 25 |
 | Link | Domain registered less than 30 days ago | 20 |
 | Link | Link text shows a different domain than the href | 15 |
@@ -210,6 +210,7 @@ The verdict comes from adding fixed points for each red flag; the LLM's tone sco
 - Each link finding counts once per email, even if several links share it, so a long email with many links is not over-penalised.
 - A check that errors (no internet, timeout) adds 0 points and is shown as "could not run" on the dashboard.
 - The engine works the same whether or not M4 is built; without it, the maximum reachable score is simply lower.
+- Halves round up (29.5 becomes 30), then the total is capped at 100. The page shows the uncapped sum when it exceeds 100.
 
 ## 7. Non-functional, safety and privacy requirements
 
@@ -307,7 +308,7 @@ Everything is Python and free; the LLM choice is still open.
 | Domain age | python-whois | M3 |
 | Lookalike matching | RapidFuzz (edit distance) | M3 |
 | Certificate inspection | Python `ssl` and `cryptography` libraries | M4 |
-| LLM | Yet to be decided | M5, M7 |
+| LLM | NVIDIA Nemotron API (key in env var `LLM_API_KEY`), Ollama small local model as offline fallback; switchable in `config.yaml` | M5, M7 |
 | Report template and PDF | Jinja2 (built into Flask), WeasyPrint | M7, M8 |
 | Web dashboard | Flask, HTML/CSS | M8 |
 | Version control | Git and GitHub | All |
@@ -372,7 +373,7 @@ The build runs in eight sessions; after session 5 the project is complete at P0 
 ## 13. Open questions
 
 - [ ] What are the dates of the 1st, 2nd and final reviews, and what must be shown at each?
-- [ ] Which LLM: a cloud API or a local model (or a cloud API with a local backup)?
+- [x] Which LLM: decided: cloud API (NVIDIA Nemotron) with a local backup (Ollama).
 - [ ] Does the department have rules on AI-assisted code that we must state in the report?
 - [ ] How are tasks split between Kaustubh and Rudraksh?
 - [ ] Is a written project report required, and in what format?
@@ -399,3 +400,21 @@ The build runs in eight sessions; after session 5 the project is complete at P0 
 | PRD | Product Requirements Document | This document |
 | Edit distance | — | Number of single-letter changes between two words (srmlst vs srmist = 1) |
 | Typosquatting / combosquatting | — | Registering a misspelt domain, or a brand plus extra words, to fool users |
+
+## 15. Changes since v1 (as built, sessions 1-4)
+
+Status: M1, M2, M3 and M6 are built; M5, M7, M8 (full dashboard), M4 and offline mode are not. Decisions and deviations made during the build:
+
+| Area | v1 said | As built / decided | Why |
+| --- | --- | --- | --- |
+| Return-Path (FR-2.5) | Flag any difference | Excused when DMARC passes; Reply-To always flagged | A real YouTube email (Return-Path on a Google domain) was wrongly penalised |
+| Lookalike (FR-3.1) | Edit distance 1-2 | Distance 2 only for domains of 10+ characters; name part at least 6 letters; subdomain-hidden lookalikes also checked | Avoid false alarms on short real domains |
+| Brands (FR-3.2) | Any brand in an unrelated domain | Everyday-word brands excluded | Avoid false alarms (live, office, zoom, uber) |
+| Text mismatch (FR-3.4) | Any difference | Skipped when both domains are trusted | Big companies use several of their own domains |
+| LLM provider | Undecided | Nemotron (`LLM_API_KEY`) + Ollama fallback, switchable in config | Team decision |
+| Missing SPF/DKIM/DMARC | "5 each" | 5 points per missing mechanism; if SPF and DMARC both cannot run, the check is "error" with 0 points | Missing data is never guilt |
+| Check card colour | Not specified | Red if any single flag is 20+ points, amber if any flag, green if none (`heavy_flag_points`) | One rule for all cards |
+| Rounding and cap | Cap at 100 | Halves round up; uncapped sum shown when capped | Predictable at the 30/60 lines; table always adds up |
+| Scoring weights | Fixed in check output | M6 re-reads weights from `config.yaml` by finding id | Session 7 can re-tune and re-score with no code changes |
+| Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`; not yet created: `certificate.py`, `tone.py`, `report.py`, `llm_client.py`, `report.html`, `evaluate.py` | Documentation and shared config helpers |
+| Performance | 5 s per lookup, parallel | M2 and M3 run side by side; WHOIS gives up after 6 s; at most 10 untrusted domains looked up | Keep one email under 15 s |
