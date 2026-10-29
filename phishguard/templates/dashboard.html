@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PhishGuard-AI</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #1f2937; }
@@ -125,5 +126,9 @@
 <h2>Body ({{ parsed.body_source }})</h2>
 <pre>{{ parsed.body_text or '(empty)' }}</pre>
 {% endif %}
+
+<footer style="margin-top: 3rem; border-top: 1px solid #e5e7eb; padding-top: 1rem; padding-bottom: 2rem; text-align: center; color: #6b7280; font-size: 0.875rem;">
+  PhishGuard-AI &bull; Course Project for 21ECC402P &bull; Kaustubh Guha &amp; Rudraksh Dubey
+</footer>
 </body>
 </html>
