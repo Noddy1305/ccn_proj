@@ -18,7 +18,7 @@ PhishGuard-AI is a laptop-based web tool that takes one suspicious email and ret
 | Team | Kaustubh Guha (RA2311004010296), Rudraksh Dubey (RA2311004010282) |
 | Full title | PhishGuard-AI: An LLM-Augmented Multi-Layer Framework for Phishing Email Detection and Automated Threat Reporting |
 | Platform | Runs locally on a laptop (Ubuntu); no extra hardware |
-| Status | Sessions 1-3 done (M1, M2, M3); session 4 partly done (M6 scoring built; M5 tone and M7 report not yet). See section 11 and section 15. |
+| Status | Sessions 1-5 done (M1, M2, M3, M5, M6, M7, M8: P0 complete). See section 11. |
 
 ## 2. Goals, non-goals and success criteria
 

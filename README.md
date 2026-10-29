@@ -23,8 +23,8 @@ The build is split into 8 sessions (PRD section 11). Status at the time of writi
 | 1 | Setup + email parser (M1) | **Done** |
 | 2 | Sender check: SPF, DKIM, DMARC (M2) | **Done** |
 | 3 | Link and domain check (M3) | **Done** |
-| 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **M6 done.** M5 and M7 **not built** (waiting on an LLM decision) |
-| 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | Not started (basic page exists) |
+| 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **Done** |
+| 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | **Done** (P0 complete) |
 | 6 | Certificate check (M4) + offline cached demo mode | Not started |
 | 7 | Evaluation on 100 emails, tune weights once, freeze | Not started |
 | 8 | Review prep: report, slides, viva Q&A | Not started |
@@ -32,9 +32,9 @@ The build is split into 8 sessions (PRD section 11). Status at the time of writi
 Optional P2 (only if time remains): batch mode, analyse a folder and export CSV.
 
 What works today: upload a `.eml` (or pick a built-in sample) at the web page. It parses the email, runs the
-sender check and the link check in parallel, scores them with M6, and shows a points table, a verdict and
-per-check evidence cards. **Not built yet:** tone analysis, LLM report, HTML/PDF report, certificate check,
-offline mode, proper dashboard polish, `scripts/evaluate.py`.
+sender check, link check, and tone check in parallel, scores them with M6, and shows a points table, a verdict,
+per-check evidence cards, on-screen plain-English executive report, and exportable A4 incident report. **Next up (Session 6):**
+certificate check (M4) and offline cached demo mode.
 
 Note the PRD folder structure lists `modules/certificate.py`, `modules/tone.py`, `modules/report.py`,
 `modules/llm_client.py`, `templates/report.html`, `scripts/evaluate.py` and `data/cache/`. These files are
