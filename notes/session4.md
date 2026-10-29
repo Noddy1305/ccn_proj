@@ -1,12 +1,13 @@
-# Session 4, part 1: Risk Scoring Engine (M6)
-
-> This file covers only **M6**. When the LLM parts (M5 tone analysis and M7 report text) are built, their sections will be **added to this same file** rather than a new one.
+# Session 4: Risk Scoring Engine (M6), LLM Tone Analysis (M5), and Report Generator (M7)
 
 ## 1. The big picture
 
-This part added the **risk scoring engine (M6)**. It takes the red flags found by the sender check (M2) and the link check (M3), adds up their points using fixed rules from `config.yaml`, and decides the verdict: **Safe, Suspicious or Phishing**. There is no AI in it.
+This session added the complete reasoning and explanation layer:
+1. **The scoring engine (M6):** takes red flags found by all checks, adds up points from `config.yaml`, and decides the verdict (Safe, Suspicious, or Phishing).
+2. **The tone analyzer (M5):** asks an LLM (NVIDIA Nemotron or Ollama) to read the email wording for artificial urgency, threats, and trickery, returning a manipulation score (0 to 10) capped at 15 points.
+3. **The report generator (M7):** produces a plain-English explanation of why the email was flagged, what evidence was found, and what the reader should do. If the LLM is offline, a deterministic template fills these fields automatically.
 
-In the PhishGuard-AI flow, M6 sits after all the checks. It is the **only** module that decides the verdict. Later modules only add more input (tone, certificate) or explain the result (the report).
+In the PhishGuard-AI flow, M5 runs alongside the sender and link checks. Then M6 decides the verdict. Then M7 explains M6's decision. **The code decides; the AI explains.**
 
 ## 2. New terms
 
@@ -84,47 +85,51 @@ Four emails through M6:
 ## 5. Files
 
 - `phishguard/modules/scoring.py`: the whole M6. Point at `score_email()` for "show me where the score is calculated". `verdict_for()` maps the score to Safe, Suspicious or Phishing. `points_for()` looks a weight up in the config. `tone_points()` is the capped tone formula. `BANDS` holds the legend text for the page.
-- `phishguard/config.yaml`: now has the `tone:` section (weight 1.5, cap 15). The weights and the 30 and 60 limits were already there.
-- `phishguard/pipeline.py`: after the checks finish, it calls `score_email()`. The earlier stand-in `rate()` function is gone.
-- `phishguard/templates/dashboard.html` and `app.py`: show "Total score", "Verdict", a "capped at 100" note when needed and a "could not run" line.
-- `phishguard/tests/test_scoring.py`: 18 tests covering adding, the cap, the thresholds, ordering, determinism, the config rules, the tone formula and the rounding rule.
+- `phishguard/modules/llm_client.py`: unified interface for calling LLMs (NVIDIA Nemotron or Ollama) using an API key from `LLM_API_KEY`.
+- `phishguard/modules/tone.py`: M5 tone analyzer. Point at `check_tone()`. Masks email addresses (PRV-2), calls LLM, and calculates capped tone points.
+- `phishguard/modules/report.py`: M7 report generator. Point at `generate_report()`. Creates summary, evidence explained, and recommended actions using LLM with deterministic template fallback (FR-7.4).
+- `phishguard/config.yaml`: has the `tone:` section (weight 1.5, cap 15) and `llm:` provider configuration.
+- `phishguard/pipeline.py`: runs sender (M2), links (M3), and tone (M5) in parallel, then calls `score_email()` (M6), then `generate_report()` (M7).
+- `phishguard/templates/dashboard.html` and `app.py`: show the on-screen executive summary, check cards, points breakdown, and link to full report.
+- `phishguard/tests/test_scoring.py`: 18 tests covering scoring logic.
+- `phishguard/tests/test_tone.py` & `test_report.py`: unit tests for M5 and M7 with offline fallbacks.
 
 ## 6. Viva questions
 
-1. **What does the scoring engine do?**
+1. **What does the scoring engine (M6) do?**
    It adds up the points of every red flag from all the checks, caps the total at 100, and maps it to Safe (0-29), Suspicious (30-59) or Phishing (60-100). It uses fixed rules only, with no AI.
 
 2. **Why is the verdict decided by code and not by the LLM?**
    Code is predictable and explainable: the same email always gets the same score, and every point can be traced to a red flag. An LLM can make mistakes, so it is only allowed to add a small capped signal and to explain the result.
 
-3. **Why is the tone score capped at 15 points?**
+3. **How does the tone check (M5) work, and how are user privacy and offline reliability protected?**
+   The tone check masks all email addresses before sending the text to the LLM (PRV-2). If the LLM is unreachable or has no internet, it returns an "error" status that adds 0 points and never breaks the pipeline (NFR-3).
+
+4. **Why is the tone score capped at 15 points?**
    The Suspicious line is 30. With a maximum of 15 the AI can never push an email into Suspicious alone, so a wrong AI answer can't wrongly flag a safe email. Real technical evidence is also needed.
 
-4. **How is the tone score turned into points?**
-   Points are 1.5 times the manipulation score (0 to 10), up to a maximum of 15. For example a score of 8 gives 12 points.
+5. **How does M7 generate the report, and what happens if the AI is offline?**
+   M7 takes the verdict, score, and findings list (not the raw email). If the LLM is online, it writes the summary, evidence, and actions. If offline or invalid, a deterministic template fills these fields automatically (FR-7.4).
 
-5. **What does "deterministic" mean here, and how do you guarantee it?**
+6. **What does "deterministic" mean here, and how do you guarantee it?**
    The same input always gives the same score and order. There is no randomness, and ties between equal flags are sorted by a fixed rule (check order, then name).
 
-6. **Where do the weights come from, and why does M6 re-read them?**
+7. **Where do the weights come from, and why does M6 re-read them?**
    They live in `config.yaml`. M6 looks each flag's weight up there instead of trusting the number the check wrote, so we can tune the weights and re-score all test emails without changing code.
 
-7. **What happens when a check fails or has no internet?**
+8. **What happens when a check fails or has no internet?**
    It adds 0 points and is shown as "could not run". The other checks still run and the verdict is still produced, so one failure never breaks the tool.
 
-8. **Why do the same red flags count only once even if several links have them?**
+9. **Why do the same red flags count only once even if several links have them?**
    Otherwise a long newsletter with many links would be over-punished. Each kind of flag counts once per email, and the evidence lists everything involved.
 
-9. **What happens if the points add up to more than 100?**
-   The score is capped at 100, and the page shows both numbers, for example "rows add up to 125, capped at 100". The verdict is still Phishing.
-
-10. **Why can a card be red while the verdict is only Suspicious?**
-    A card judges one check (red if any single flag is 20 points or more). The verdict judges the total score across all checks, so the two can differ.
+10. **What happens if the points add up to more than 100?**
+    The score is capped at 100, and the page shows both numbers, for example "rows add up to 125, capped at 100". The verdict is still Phishing.
 
 ## 7. Remember this
 
 - M6 is the **only** module that decides the verdict, using **fixed rules**, with no AI.
+- The LLM **adds one small capped signal (M5, max 15 pts)** and **explains the verdict (M7)**.
+- If offline, M5 adds 0 points and M7 falls back to a **deterministic rule template** (100% demo-safe).
 - Score = sum of weights from **config.yaml**, **capped at 100**; bands are **0-29 Safe, 30-59 Suspicious, 60-100 Phishing**.
 - Tone is capped at **15** (below the **30** line), so the **AI can never convict alone**.
-- A failed check adds **0 points** and shows as "could not run"; each flag counts **once per email**.
-- Same input, same score every time, and weights can be tuned in the config **without touching code**.

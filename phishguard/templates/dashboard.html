@@ -8,7 +8,7 @@
   body { font-family: system-ui, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #1f2937; }
   h1 { margin-bottom: 0; } .sub { color: #6b7280; margin-top: .2rem; }
   form { background: #f3f4f6; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
-  button { background: #2563eb; color: #fff; border: 0; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; }
+  button { background: #2563eb; color: #fff; border: 0; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
   .error { background: #fee2e2; color: #991b1b; padding: .8rem; border-radius: 6px; }
   table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
   th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: .4rem .5rem; vertical-align: top; word-break: break-all; }
@@ -18,11 +18,11 @@
   .card { border: 1px solid #e5e7eb; border-left-width: 6px; border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
   .card.pass { border-left-color: #16a34a; } .card.warn { border-left-color: #d97706; }
   .card.fail { border-left-color: #dc2626; } .card.error { border-left-color: #6b7280; }
-  .tag { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; background: #e5e7eb; }
+  .tag { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; background: #e5e7eb; font-weight: 600; text-transform: uppercase; }
   .pts { color: #991b1b; font-weight: 600; } .src { color: #6b7280; font-size: .85rem; }
   .card td, .card th { word-break: normal; }
   .banner { background: #eff6ff; border: 1px solid #bfdbfe; padding: .5rem .8rem; border-radius: 6px; }
-  .rate { display: inline-block; padding: .25rem .8rem; border-radius: 99px; color: #fff; font-weight: 700; }
+  .rate { display: inline-block; padding: .25rem .8rem; border-radius: 99px; color: #fff; font-weight: 700; text-transform: capitalize; }
   .rate.safe { background: #16a34a; } .rate.suspicious { background: #d97706; } .rate.phishing { background: #dc2626; }
   table.grid th, table.grid td { border: 1px solid #e5e7eb; width: auto; }
   table.grid th { background: #f3f4f6; }
@@ -31,11 +31,21 @@
   tr.safe td:first-child { border-left: 6px solid #16a34a; } tr.suspicious td:first-child { border-left: 6px solid #d97706; }
   tr.phishing td:first-child { border-left: 6px solid #dc2626; }
   .note { color: #6b7280; font-size: .9rem; }
+  .btn-report {
+    display: inline-block;
+    background: #2563eb;
+    color: #fff;
+    padding: .45rem .9rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: .85rem;
+    font-weight: 600;
+  }
 </style>
 </head>
 <body>
 <h1>PhishGuard-AI</h1>
-<p class="sub">Parser (M1), sender (M2) and link (M3) checks, with a rule-based verdict (M6). Tone and certificate checks come later.</p>
+<p class="sub">Multi-layer email threat scanner: parser (M1), sender (M2), links (M3), tone (M5), scoring (M6), and report (M7).</p>
 
 <form method="post" action="/analyze" enctype="multipart/form-data">
   <p><label>Upload a .eml file: <input type="file" name="email" accept=".eml"></label>
@@ -55,6 +65,19 @@
 {% if parsed %}
 <p class="banner">Showing results for <b>{{ source }}</b></p>
 
+{% if report %}
+<div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1.2rem; margin: 1.5rem 0;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom: 0.8rem;">
+    <h2 style="margin:0; font-size: 1.25rem;">Executive Summary &amp; Plain-English Report</h2>
+    <a href="/report{% if selected %}?sample={{ selected }}{% endif %}" target="_blank" class="btn-report">📄 Download / Print Report (PDF)</a>
+  </div>
+  <p style="margin: 0.5rem 0; font-size: 0.95rem;"><b>Summary:</b> {{ report.summary }}</p>
+  <p style="margin: 0.5rem 0; font-size: 0.95rem;"><b>Forensic Evidence:</b> {{ report.evidence_explained }}</p>
+  <p style="margin: 0.5rem 0; font-size: 0.95rem; white-space: pre-line;"><b>Recommended Actions:</b><br>{{ report.recommended_actions }}</p>
+  <p class="note" style="margin-top: 0.6rem; font-size: 0.8rem;">Verdict produced by rule-based scoring engine (M6); analysis generated with {{ 'LLM AI assistance' if report.is_ai_generated else 'deterministic forensic rules' }}.</p>
+</div>
+{% endif %}
+
 <h2>Points breakdown</h2>
 <table class="grid">
   <tr><th>Check</th><th>Red flag found</th><th>Points</th><th>Evidence</th></tr>
@@ -64,7 +87,7 @@
     <td>Verdict: <span class="rate {{ band }}">{{ band | capitalize }}</span></td></tr>
 </table>
 {% if not_run %}<p class="note"><b>Could not run:</b> {{ not_run | join(', ') }} (added 0 points).</p>{% endif %}
-<p class="note">Verdict from fixed rules (M6). Only the sender (M2) and link (M3) checks are built so far, so the certificate and tone checks may add more points in later sessions.</p>
+<p class="note">Verdict from fixed rules (M6). The sender (M2), link (M3), and tone (M5) checks contribute risk points, and M7 explains the evidence.</p>
 
 <h2>How to read the score</h2>
 <table class="grid">
@@ -75,10 +98,10 @@
 <h2>Check details</h2>
 {% for c in checks %}
 <div class="card {{ c.status }}">
-  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
+  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain', 'tone': 'Tone and manipulation (AI)'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
   {% if c.error %}<p>{{ c.error }}</p>{% endif %}
   <table>
-    <tr><th>{{ 'Domain' if c.check == 'links' else 'Test' }}</th><th>Result</th><th>Evidence</th></tr>
+    <tr><th>{{ 'Domain' if c.check == 'links' else ('Tactic' if c.check == 'tone' else 'Test') }}</th><th>Result</th><th>Evidence</th></tr>
     {% for d in c.details %}<tr>
       <td>{{ d.name }}</td>
       <td>{{ d.result }}{% if d.policy %} (p={{ d.policy }}){% endif %}<br><span class="src">{{ d.source }}</span></td>

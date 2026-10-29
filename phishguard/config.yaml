@@ -33,6 +33,17 @@ tone:
   weight: 1.5
   max_points: 15
 
+# LLM provider settings (M5 tone analysis, M7 report generator)
+llm:
+  provider: nemotron          # nemotron | ollama
+  timeout_seconds: 10
+  nemotron:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-4-340b-instruct
+  ollama:
+    base_url: http://localhost:11434/v1
+    model: llama3.2:1b
+
 # Verdict bands (PRD section 6). Score 0-100.
 thresholds:
   suspicious_from: 30       # below this = Safe
