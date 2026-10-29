@@ -1,0 +1,9 @@
+From: Sender <alerts@example.org>
+To: me@example.net
+Subject: link_text_mismatch
+Date: Mon, 26 Oct 2026 15:00:00 +0530
+Message-ID: <link_text_mismatch@example.org>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body><p>Fixture for finding link_text_mismatch.</p><a href="http://evil-site.com/p">https://www.srmist.edu.in/hallticket</a></body></html>

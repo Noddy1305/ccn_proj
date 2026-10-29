@@ -1,0 +1,45 @@
+# PhishGuard-AI configuration (all tunable settings live here)
+app:
+  max_upload_mb: 5          # FR-1.1: largest .eml accepted
+  host: 127.0.0.1
+  port: 5000
+
+dns:
+  timeout_seconds: 5        # NFR-2: every network lookup gives up after 5 s
+
+# Points added per red flag (PRD section 6). Checks never hardcode these.
+points:
+  # Sender check (M2)
+  dmarc_fail: 25
+  spf_fail: 20
+  dkim_invalid: 20
+  spf_softfail: 10
+  domain_mismatch: 10       # Reply-To / Return-Path domain differs from From
+  spf_none: 5
+  dkim_none: 5
+  dmarc_none: 5
+  # Link and domain check (M3)
+  lookalike_domain: 25      # edit distance 1-2 from a trusted domain
+  domain_age_new: 20        # registered less than 30 days ago
+  link_text_mismatch: 15    # link text shows one domain, href goes to another
+  brand_in_domain: 15       # trusted brand name inside an unrelated domain
+  raw_ip_link: 15           # link uses a number instead of a domain name
+  domain_age_recent: 10     # registered 30-180 days ago
+  domain_unresolved: 10     # domain does not exist in DNS
+
+# Tone check (M5, built later): points = weight x manipulation score (0-10), capped.
+# The cap must stay below suspicious_from so the AI can never flag an email on its own.
+tone:
+  weight: 1.5
+  max_points: 15
+
+# Verdict bands (PRD section 6). Score 0-100.
+thresholds:
+  suspicious_from: 30       # below this = Safe
+  phishing_from: 60         # this or above = Phishing
+  heavy_flag_points: 20     # a check card turns red when any single red flag is worth this much or more
+
+links:
+  max_domains: 10           # at most this many untrusted domains are looked up (keeps it fast)
+  age_new_days: 30          # younger than this = high risk
+  age_recent_days: 180      # younger than this = medium risk

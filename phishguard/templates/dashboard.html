@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PhishGuard-AI</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 920px; margin: 2rem auto; padding: 0 1rem; color: #1f2937; }
+  h1 { margin-bottom: 0; } .sub { color: #6b7280; margin-top: .2rem; }
+  form { background: #f3f4f6; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+  button { background: #2563eb; color: #fff; border: 0; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; }
+  .error { background: #fee2e2; color: #991b1b; padding: .8rem; border-radius: 6px; }
+  table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+  th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: .4rem .5rem; vertical-align: top; word-break: break-all; }
+  th { width: 11rem; color: #374151; }
+  pre { background: #f9fafb; border: 1px solid #e5e7eb; padding: .7rem; white-space: pre-wrap; border-radius: 6px; }
+  h2 { margin-top: 1.5rem; }
+  .card { border: 1px solid #e5e7eb; border-left-width: 6px; border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
+  .card.pass { border-left-color: #16a34a; } .card.warn { border-left-color: #d97706; }
+  .card.fail { border-left-color: #dc2626; } .card.error { border-left-color: #6b7280; }
+  .tag { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; background: #e5e7eb; }
+  .pts { color: #991b1b; font-weight: 600; } .src { color: #6b7280; font-size: .85rem; }
+  .card td, .card th { word-break: normal; }
+  .banner { background: #eff6ff; border: 1px solid #bfdbfe; padding: .5rem .8rem; border-radius: 6px; }
+  .rate { display: inline-block; padding: .25rem .8rem; border-radius: 99px; color: #fff; font-weight: 700; }
+  .rate.safe { background: #16a34a; } .rate.suspicious { background: #d97706; } .rate.phishing { background: #dc2626; }
+  table.grid th, table.grid td { border: 1px solid #e5e7eb; width: auto; }
+  table.grid th { background: #f3f4f6; }
+  tr.total td { font-weight: 700; background: #f9fafb; }
+  tr.now { outline: 3px solid #2563eb; outline-offset: -3px; }
+  tr.safe td:first-child { border-left: 6px solid #16a34a; } tr.suspicious td:first-child { border-left: 6px solid #d97706; }
+  tr.phishing td:first-child { border-left: 6px solid #dc2626; }
+  .note { color: #6b7280; font-size: .9rem; }
+</style>
+</head>
+<body>
+<h1>PhishGuard-AI</h1>
+<p class="sub">Parser (M1), sender (M2) and link (M3) checks, with a rule-based verdict (M6). Tone and certificate checks come later.</p>
+
+<form method="post" action="/analyze" enctype="multipart/form-data">
+  <p><label>Upload a .eml file: <input type="file" name="email" accept=".eml"></label>
+     <button type="submit">Parse</button></p>
+</form>
+<form method="post" action="/analyze">
+  <p><label>Or pick a sample:
+    <select name="sample">
+      <option value="" {{ 'selected' if not selected }}>&mdash; choose a sample &mdash;</option>
+      {% for s in samples %}<option value="{{ s }}" {{ 'selected' if s == selected }}>{{ s }}</option>{% endfor %}
+    </select></label>
+    <button type="submit">Parse sample</button></p>
+</form>
+
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+{% if parsed %}
+<p class="banner">Showing results for <b>{{ source }}</b></p>
+
+<h2>Points breakdown</h2>
+<table class="grid">
+  <tr><th>Check</th><th>Red flag found</th><th>Points</th><th>Evidence</th></tr>
+  {% for r in rows %}<tr><td>{{ r.check | capitalize }}</td><td>{{ r.title }}</td><td>+{{ '%g' % r.points }}</td><td>{{ r.evidence }}</td></tr>
+  {% else %}<tr><td colspan="4">No red flags found: 0 points.</td></tr>{% endfor %}
+  <tr class="total"><td colspan="2">Total score</td><td>{{ total }} / 100{% if raw_total > 100 %}<br><span class="note">(rows add up to {{ '%g' % raw_total }}, capped at 100)</span>{% endif %}</td>
+    <td>Verdict: <span class="rate {{ band }}">{{ band | capitalize }}</span></td></tr>
+</table>
+{% if not_run %}<p class="note"><b>Could not run:</b> {{ not_run | join(', ') }} (added 0 points).</p>{% endif %}
+<p class="note">Verdict from fixed rules (M6). Only the sender (M2) and link (M3) checks are built so far, so the certificate and tone checks may add more points in later sessions.</p>
+
+<h2>How to read the score</h2>
+<table class="grid">
+  <tr><th>Score</th><th>Rating</th><th>What it means</th></tr>
+  {% for key, name, rng, desc in bands %}<tr class="{{ key }} {{ 'now' if key == band }}"><td>{{ rng }}</td><td><b>{{ name }}</b>{% if key == band %} &larr; this email{% endif %}</td><td>{{ desc }}</td></tr>{% endfor %}
+</table>
+
+<h2>Check details</h2>
+{% for c in checks %}
+<div class="card {{ c.status }}">
+  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
+  {% if c.error %}<p>{{ c.error }}</p>{% endif %}
+  <table>
+    <tr><th>{{ 'Domain' if c.check == 'links' else 'Test' }}</th><th>Result</th><th>Evidence</th></tr>
+    {% for d in c.details %}<tr>
+      <td>{{ d.name }}</td>
+      <td>{{ d.result }}{% if d.policy %} (p={{ d.policy }}){% endif %}<br><span class="src">{{ d.source }}</span></td>
+      <td>{{ d.evidence }}</td></tr>{% endfor %}
+  </table>
+</div>
+{% endfor %}
+
+<h2>Email details</h2>
+<table>
+  <tr><th>From</th><td>{{ parsed['from'].name }} &lt;{{ parsed['from'].address }}&gt;</td></tr>
+  <tr><th>Reply-To</th><td>{{ parsed.reply_to.address or '—' }}</td></tr>
+  <tr><th>Return-Path</th><td>{{ parsed.return_path.address or '—' }}</td></tr>
+  <tr><th>To</th><td>{{ parsed.to | join(', ') or '—' }}</td></tr>
+  <tr><th>Subject</th><td>{{ parsed.subject }}</td></tr>
+  <tr><th>Date</th><td>{{ parsed.date }}</td></tr>
+  <tr><th>Message-ID</th><td>{{ parsed.message_id }}</td></tr>
+  <tr><th>Sending server IP</th><td>{{ parsed.sending_ip or 'not found' }}</td></tr>
+</table>
+
+<h2>Received chain ({{ parsed.received_chain | length }} hops, newest first)</h2>
+<pre>{% for r in parsed.received_chain %}{{ loop.index }}. {{ r }}
+
+{% else %}none{% endfor %}</pre>
+
+<h2>Authentication headers</h2>
+<table>
+  <tr><th>DKIM-Signature</th><td>{% for d in parsed.dkim_signatures %}{{ d }}<br>{% else %}none{% endfor %}</td></tr>
+  <tr><th>Authentication-Results</th><td>{% for a in parsed.authentication_results %}{{ a }}<br>{% else %}none{% endfor %}</td></tr>
+</table>
+
+<h2>Links ({{ parsed.links | length }})</h2>
+<table>
+  <tr><th>Visible text</th><th>Real destination (href)</th></tr>
+  {% for l in parsed.links %}<tr><td>{{ l.text or '(no text)' }}</td><td>{{ l.href }}</td></tr>
+  {% else %}<tr><td colspan="2">no links</td></tr>{% endfor %}
+</table>
+
+<h2>Attachments (names only, never opened)</h2>
+<table>
+  {% for a in parsed.attachments %}<tr><td>{{ a.filename }}</td><td>{{ a.content_type }}</td></tr>
+  {% else %}<tr><td>none</td></tr>{% endfor %}
+</table>
+
+<h2>Body ({{ parsed.body_source }})</h2>
+<pre>{{ parsed.body_text or '(empty)' }}</pre>
+{% endif %}
+</body>
+</html>

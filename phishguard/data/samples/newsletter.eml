@@ -1,0 +1,22 @@
+Received: from o1.email.shopmart.com (o1.email.shopmart.com [54.240.8.23])
+	by mx.example.org with ESMTPS id n7; Sun, 25 Oct 2026 08:00:00 +0000
+From: "ShopMart Deals" <deals@email.shopmart.com>
+To: student@example.org
+Subject: Last chance: festive sale ends tonight!
+Date: Sun, 25 Oct 2026 13:30:00 +0530
+Message-ID: <news77@email.shopmart.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="BOUND"
+
+--BOUND
+Content-Type: text/plain; charset="utf-8"
+
+Festive sale ends tonight! Grab up to 50% off. https://www.shopmart.com/sale
+--BOUND
+Content-Type: text/html; charset="utf-8"
+
+<html><body><h2>Festive sale ends tonight!</h2>
+<p>Grab up to <b>50% off</b> on electronics.</p>
+<p><a href="https://www.shopmart.com/sale">Shop the sale</a> |
+<a href="https://www.shopmart.com/unsubscribe">Unsubscribe</a></p></body></html>
+--BOUND--

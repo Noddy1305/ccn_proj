@@ -1,0 +1,26 @@
+Received: from mail.srmlst-verify.com (unknown [185.234.72.19])
+	by mx.google.com with ESMTP id abc123
+	for <student@gmail.com>; Tue, 27 Oct 2026 09:14:02 -0700 (PDT)
+Received: from localhost (10.0.0.5) by mail.srmlst-verify.com; Tue, 27 Oct 2026 21:44:00 +0530
+Authentication-Results: mx.google.com;
+       spf=fail smtp.mailfrom=srmlst-verify.com;
+       dkim=none;
+       dmarc=fail (p=REJECT) header.from=srmist.edu.in
+Return-Path: <bounce@srmlst-verify.com>
+From: "SRM Exam Cell" <examcell@srmist.edu.in>
+Reply-To: <exam-help@srmlst-verify.com>
+To: student@gmail.com
+Subject: URGENT: Your hall ticket will be cancelled in 24 hours
+Date: Tue, 27 Oct 2026 21:44:00 +0530
+Message-ID: <fake001@srmlst-verify.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Dear Student,</p>
+<p><b>Immediate action required.</b> Your examination hall ticket has been flagged and will be
+<b>cancelled within 24 hours</b> unless you verify your login credentials.</p>
+<p><a href="http://srmlst.edu.in.verify-login.com/portal">https://www.srmist.edu.in/hallticket</a></p>
+<p>Or visit <a href="http://203.0.113.50/login">our backup portal</a>.</p>
+<p>Exam Cell, SRM IST</p>
+</body></html>

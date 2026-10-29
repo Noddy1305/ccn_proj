@@ -1,0 +1,10 @@
+flask
+beautifulsoup4
+pyyaml
+pytest
+dnspython
+pyspf
+dkimpy
+cryptography
+python-whois
+rapidfuzz

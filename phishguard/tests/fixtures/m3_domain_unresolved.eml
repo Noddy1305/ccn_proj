@@ -1,0 +1,9 @@
+From: Sender <alerts@example.org>
+To: me@example.net
+Subject: domain_unresolved
+Date: Mon, 26 Oct 2026 15:00:00 +0530
+Message-ID: <domain_unresolved@example.org>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+
+<html><body><p>Fixture for finding domain_unresolved.</p><a href="http://ghost-domain.net/a">Click</a></body></html>

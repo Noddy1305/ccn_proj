@@ -1,0 +1,23 @@
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com [209.85.220.41])
+	by mx.example.org with ESMTPS id x1
+	for <student@example.org>; Mon, 26 Oct 2026 10:02:11 +0000
+Received: by 2002:a05:6a00:1 with SMTP id q1; Mon, 26 Oct 2026 03:02:10 -0700 (PDT)
+Authentication-Results: mx.example.org;
+       spf=pass smtp.mailfrom=srmist.edu.in;
+       dkim=pass header.d=srmist.edu.in;
+       dmarc=pass header.from=srmist.edu.in
+From: "SRM Academics" <academics@srmist.edu.in>
+To: student@example.org
+Subject: Semester timetable published
+Date: Mon, 26 Oct 2026 15:32:00 +0530
+Message-ID: <real001@srmist.edu.in>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+
+Dear Students,
+
+The timetable for the coming semester is now available on the academic portal:
+https://www.srmist.edu.in/academics
+
+Regards,
+Academics Office

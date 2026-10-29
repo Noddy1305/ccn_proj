@@ -1,0 +1,21 @@
+Received: from unknown (HELO mail.bankofsecure-alerts.net) (91.214.124.77)
+	by mx.example.org with SMTP; 12 Mar 2026 04:11:00 -0000
+From: "Bank Security" <security@bankofsecure.com>
+To: customer@example.org
+Subject: Account suspended - confirm your password now
+Date: Thu, 12 Mar 2026 04:10:00 +0000
+Message-ID: <phish88@bankofsecure-alerts.net>
+Content-Type: multipart/mixed; boundary="MIX"
+
+--MIX
+Content-Type: text/plain; charset="utf-8"
+
+Your account has been suspended. Confirm your password within 12 hours:
+http://bankofsecure-alerts.net/login.php
+--MIX
+Content-Type: application/zip; name="invoice.zip"
+Content-Disposition: attachment; filename="invoice.zip"
+Content-Transfer-Encoding: base64
+
+UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==
+--MIX--

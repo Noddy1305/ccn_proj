@@ -1,0 +1,9 @@
+# personal test emails (contain real addresses) - kept local only
+chk/
+
+# Python / environment
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
