@@ -26,6 +26,11 @@ points:
   raw_ip_link: 15           # link uses a number instead of a domain name
   domain_age_recent: 10     # registered 30-180 days ago
   domain_unresolved: 10     # domain does not exist in DNS
+  # Certificate check (M4)
+  cert_untrusted: 15        # self-signed, or issued by someone browsers do not trust
+  cert_expired: 15
+  cert_hostname_mismatch: 15  # certificate is for a different website name
+  cert_new: 5               # issued in the last 7 days
 
 # Tone check (M5): points = weight x manipulation score (0-10), capped.
 # The cap must stay below suspicious_from so the AI can never flag an email on its own.
@@ -44,6 +49,16 @@ links:
   max_domains: 10           # at most this many untrusted domains are looked up (keeps it fast)
   age_new_days: 30          # younger than this = high risk
   age_recent_days: 180      # younger than this = medium risk
+
+certificate:
+  max_hosts: 10             # at most this many https sites get a TLS handshake
+  new_days: 7               # a certificate younger than this is "new"
+
+# Offline demo mode (NFR-4). live = normal. replay = never touch the internet: DNS, WHOIS, certificate and
+# AI answers come from data/cache/lookups.json (fill it with scripts/record_offline_cache.py).
+# Can also be set for one run: PHISHGUARD_MODE=replay ./venv/bin/python app.py
+offline:
+  mode: live
 
 # LLM (M5 tone, M7 report text). One interface, switchable here (NFR-6).
 # The key is NEVER stored in this file: it is read from the environment variable named below.

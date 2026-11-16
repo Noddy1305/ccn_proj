@@ -1,0 +1,628 @@
+{
+ "recorded_at": "2026-11-16T08:46:30.760750+00:00",
+ "note": "Saved internet answers for the sample emails (offline demo mode). Re-create with scripts/record_offline_cache.py. AI answers are keyed by a hash of the prompt.",
+ "samples": {
+  "corpus_phish.eml": {
+   "score": 32,
+   "verdict": "suspicious",
+   "report": "ai",
+   "not_run": []
+  },
+  "forged_exam_cell.eml": {
+   "score": 100,
+   "verdict": "phishing",
+   "report": "ai",
+   "not_run": []
+  },
+  "genuine_college.eml": {
+   "score": 5,
+   "verdict": "safe",
+   "report": "ai",
+   "not_run": []
+  },
+  "newsletter.eml": {
+   "score": 30,
+   "verdict": "suspicious",
+   "report": "ai",
+   "not_run": []
+  }
+ },
+ "answers": {
+  "ai|[\"22890c95b7af7dc678a225905a2069a2\"]": {
+   "summary": "A phishing email pretending to be from a university, with multiple signs of spoofing and deception.",
+   "evidence_explained": "The email claims to be from srmist.edu.in, but the sending domain and reply-to address are srmlst-verify.com, a different domain. The link text says srmist.edu.in but the actual destination is srmlst.edu.in.verify-login.com, which is one letter away from the real domain. The link also goes to a raw IP address 203.0.113.50 instead of a website. The email has no DKIM signature, and DMARC failed because the domain alignment is broken. The wording pressures the reader to act quickly.",
+   "recommended_actions": "Do not click any links or reply. Delete the email. If you need to verify the matter, contact the organization through a known, trusted method such as their official website or phone number."
+  },
+  "ai|[\"2dcf24d74e0b8a0559839ed88bdd2277\"]": {
+   "score": 3,
+   "tactics": [
+    {
+     "tactic": "urgency",
+     "quote": "Festive sale ends tonight!"
+    }
+   ]
+  },
+  "ai|[\"3b868d4f1ac24a6c05592005d4362dd6\"]": {
+   "summary": "A suspicious email with urgent, manipulative wording. It pressures the reader into immediate action and fails key email authentication checks.",
+   "evidence_explained": "The email uses urgent, manipulative language to pressure you into acting quickly. Technical checks show the sender's domain name cannot be resolved into a real website address. The email also lacks two standard security signatures: DKIM and DMARC, which are normally used to verify that an email truly comes from the claimed sender.",
+   "recommended_actions": "Do not click any links or download attachments. If you have an account with the claimed organization, contact them directly through a known, trusted method. Delete the email."
+  },
+  "ai|[\"924ca4f313cbd73d638c1d55cf0b72bf\"]": {
+   "score": 8,
+   "tactics": [
+    {
+     "tactic": "urgency",
+     "quote": "Confirm your password within 12 hours"
+    }
+   ],
+   "tactic": "credential_request",
+   "quote": "Confirm your password"
+  },
+  "ai|[\"ab5771d3bfe29d22f4962ddbe59d2cbb\"]": {
+   "summary": "This email is flagged as suspicious. It has several security issues that lower its trust score.",
+   "evidence_explained": "The email's security certificate is for a different website name than the one it claims to be from. It also lacks two important email security protections: a DKIM signature and a DMARC record. Additionally, the language used in the email is designed to pressure or manipulate the reader.",
+   "recommended_actions": "Do not click any links or download attachments in this email. If you were expecting a message from Shopmart, contact them through a known, trusted method, such as their official website or phone number. Otherwise, delete the email."
+  },
+  "ai|[\"c614ff04d17a546e876ce4f2979a40f2\"]": {
+   "score": 1,
+   "tactics": [
+    {
+     "tactic": "urgency",
+     "quote": "is now available on the academic portal"
+    }
+   ]
+  },
+  "ai|[\"cbc22cc812ee0a736465ca2433686e91\"]": {
+   "summary": "This email passed the safety check with a very low risk score. It was classified as safe despite a minor technical note.",
+   "evidence_explained": "The system checked the email's technical markers. It noted that there was no DKIM-Signature header present, which is a standard technical detail for some legitimate messages. No other suspicious markers were found, so the email was allowed through.",
+   "recommended_actions": "You can read and handle this email as normal. There is no indicated threat, so no special action is needed."
+  },
+  "ai|[\"da2cd8d9ff555c87a734e49d443f3309\"]": {
+   "score": 8,
+   "tactics": [
+    {
+     "tactic": "urgency",
+     "quote": "will be cancelled in 24 hours"
+    }
+   ]
+  },
+  "dns_txt|[\"_dmarc.bankofsecure.com\"]": [],
+  "dns_txt|[\"_dmarc.email.shopmart.com\"]": [],
+  "dns_txt|[\"_dmarc.shopmart.com\"]": [],
+  "dns_txt|[\"_dmarc.srmist.edu.in\"]": [
+   "v=DMARC1; p=none; rua=mailto:dmarc@srmist.edu.in"
+  ],
+  "dns|[\"bankofsecure-alerts.net\", \"A\"]": [],
+  "dns|[\"bankofsecure-alerts.net\", \"AAAA\"]": [],
+  "dns|[\"bankofsecure-alerts.net\", \"MX\"]": [],
+  "dns|[\"shopmart.com\", \"MX\"]": [],
+  "dns|[\"srmlst.edu.in.verify-login.com\", \"A\"]": [
+   "54.243.117.197",
+   "13.223.25.84"
+  ],
+  "dns|[\"srmlst.edu.in.verify-login.com\", \"AAAA\"]": [
+   "2600:1f18:4ae:c605:dd5d:b838:5816:d7fb",
+   "2600:1f18:4ae:c606:78d4:4260:db4e:aeee"
+  ],
+  "dns|[\"verify-login.com\", \"MX\"]": [],
+  "dns|[\"www.shopmart.com\", \"A\"]": [
+   "198.185.159.144",
+   "198.49.23.144",
+   "198.49.23.145",
+   "198.185.159.145"
+  ],
+  "dns|[\"www.shopmart.com\", \"AAAA\"]": [],
+  "spf_dns|[\"_spf.google.com\", \"TXT\"]": [
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "_spf.google.com",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dj1zcGYxIGlwNDo3NC4xMjUuMC4wLzE2IGlwNDoxOTIuMTc4LjQ3LjAvMjQgaXA0OjE5Mi4xNzkuOTIuMC8yMiBpcDQ6MjA5Ljg1LjEyOC4wLzE3IGlwNjoyMDAxOjQ4NjA6NDg2NDo6LzU2IGlwNjoyNDA0OjY4MDA6NDg2NDo6LzU2IGlwNjoyNjA3OmY4YjA6NDg2NDo6LzU2IGlwNjoyODAwOjNmMDo0ODY0OjovNTYgaXA2OjJhMDA6MTQ1MDo0ODY0OjovNTYgaXA2OjJjMGY6ZmI1MDo0ODY0OjovNTYgfmFsbA=="
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "spf_dns|[\"srmist.edu.in\", \"TXT\"]": [
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "X3lyaGNxZXcyYjlweWs3amdhamlscGs3NHI5MmxnY3Q="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPW11WXkwbXVHNUE0S0N1RzcyQ0g0dFRLTV9hN1hJVU9BUzlCZVlzRUFZbVU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dj1zcGYxIGluY2x1ZGU6dXNlcm1haWwuem9ob2NyZWF0b3IuY29tIGluY2x1ZGU6X3NwZi5nb29nbGUuY29tIGluY2x1ZGU6bmxzbXRwLmNvbSBpbmNsdWRlOnNwZi5mYWxjb25pZGUuY29tIGluY2x1ZGU6YS5fc3BmLmJyaWdodHNwYWNlLmNvbSBpbmNsdWRlOnpjc2VuZC5pbiB+YWxs"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dnpmNm1ocnhnZzIyY3hjdnFmNHRzNXMxazJmYzV0OTY="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "eDF0bWo4anJ5a2w2ZDVmbnk1dDlkMDdsaDA5Mm1zOW4="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "TVM9NzU2NEY1OTU1RTRGMTg4QUI0QjBBNTMyRUU2N0IyQkQyRTlCNzgzQw=="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "NnBnYmd6eThzbmsycDRibXNxNmQxbjA5MDE1N2trd2Y="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPW9iYkZaYVBXSkxjTjBScW1pUkdJckVBRi1LcDRzemd1d2R1ZHRIbTBNT1E="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "XzByODgxM25raGtyMWhpdWNod3FmOGY0aWNobXJvbzU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "X2J2cDB2bmM4YjF5MTR4eG44ZTlxNDdsOXZtN2Nhc2k="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "TVM9bXM2ODY4NDM1Mw=="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "ZnBxanNmNWxoeXk4OXZsMDJsZ203dGdoNDEzbTZxcjk="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "cGczZmRkdDdqcnRwbW5wY3I1bnRqdTRhbzA="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "X3d3Z3l5dmc1ZWFjNzZ2OGI3dzdwNGJlcXlwNzRhMm0="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dDIyYzFvMGJhMG9ncDRmMmZjaDlxODA4Y2s="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPUJSc0F3N0RZRjlHVWFqVm5oV3dFUm9mWlFrampVZ1laeHFkZXVnVVp3Yms="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "ejNtcWY0cmN4eTMzaHNmbTNiN3o1cTloNzl6ZGR3MDQ="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPUpMdThQdkpWNDhONEI5czUxakpFTHFUVzdLc01HSGJCOWpnalNnNmNJMWM="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "YXFjMDQxMGZodm80MjBnMTd2cGJudjhwOTE="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z2RnbHByN3gzemxjNjZ6NWJkNDI5czh4cTk4ODM4Z2g="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "MzloM2xodTFkODFvcjN1bXViODU4OTAzOGU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Nmtic3FtZnd2Y2RsY2JxMTY5djA0NXg3MnBiZzlrbDc="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWdiaXFiZVFpWTZha3BJTE5VcU0tY09FdjlIYkVCYjZhTDhUNEMwajZxQkk="
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "spf_dns|[\"transmail.net\", \"TXT\"]": [
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "transmail.net",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPVBGTDhyeTUtVThiaXJYZUZ3bDZxNEVxTldlekRxWThjRGFFTXVBUHVKWEU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "transmail.net",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dj1zcGYxIGlwNDoxMzYuMTQzLjE4OC4wLzI0IGlwNDoxMzUuODQuODAuMC8yNCBpcDQ6MTM1Ljg0LjgyLjAvMjQgaXA0OjE5OS42Ny42NC4wLzI0IGlwNDoxMzYuMTQzLjE4NC4wLzI0IGlwNDoxNjUuMTczLjE4MS4wLzI0IGlwNDoxNjUuMTczLjE4My4wLzI0IGlwNDo4LjM5LjU0LjI0MC8yOSBpcDQ6OC40MC4yMjIuMjQwLzI5IH5hbGw="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "transmail.net",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWtUc3o5TmY0dnFET0l6ZDVGVDdOX2VkSV9xZ21MWFhwZ1FFeWZiWWRZbkE="
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "spf_dns|[\"usermail.zohocreator.com\", \"TXT\"]": [
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "usermail.zohocreator.com",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dj1zcGYxIGluY2x1ZGU6dHJhbnNtYWlsLm5ldCB+YWxs"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "tls|[\"www.shopmart.com\"]": {
+   "der": {
+    "__bytes__": "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"
+   },
+   "verify_error": "Hostname mismatch, certificate is not valid for 'www.shopmart.com'."
+  },
+  "whois|[\"bankofsecure-alerts.net\"]": {
+   "__tuple__": [
+    "not_registered",
+    null
+   ]
+  },
+  "whois|[\"shopmart.com\"]": {
+   "__tuple__": [
+    "ok",
+    {
+     "__datetime__": "1998-05-06T04:00:00+00:00"
+    }
+   ]
+  },
+  "whois|[\"verify-login.com\"]": {
+   "__tuple__": [
+    "ok",
+    {
+     "__datetime__": "2018-09-19T18:01:47+00:00"
+    }
+   ]
+  }
+ }
+}

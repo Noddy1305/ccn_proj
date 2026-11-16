@@ -25,19 +25,24 @@ The build is split into 8 sessions (PRD section 11). Status at the time of writi
 | 3 | Link and domain check (M3) | **Done** |
 | 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **Done** (Nemotron main, Ollama fallback in config; local model not downloaded yet) |
 | 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | **Done** (P0 complete) |
-| 6 | Certificate check (M4) + offline cached demo mode | Not started |
+| 6 | Certificate check (M4) + offline cached demo mode | **Done** |
 | 7 | Evaluation on 100 emails, tune weights once, freeze | Not started |
 | 8 | Review prep: report, slides, viva Q&A | Not started |
 
 Optional P2 (only if time remains): batch mode, analyse a folder and export CSV.
 
 What works today: upload (or drag and drop) a `.eml`, or pick a built-in sample, at the web page. It parses the
-email, runs the sender, link and AI tone checks in parallel, scores them with M6, and shows a verdict badge, per-check
-evidence cards and a report (plain-English text, check table, points table) that can be downloaded as a PDF.
-**Not built yet:** certificate check (M4), offline mode, `scripts/evaluate.py`.
+email, runs the sender, link, certificate and AI tone checks in parallel, scores them with M6, and shows a verdict
+badge, per-check evidence cards and a report (plain-English text, check table, points table) that can be downloaded
+as a PDF. An offline demo mode replays saved internet answers for the sample emails, so the demo works with Wi-Fi off.
+**Not built yet:** `scripts/evaluate.py` (session 7).
 
-The PRD folder structure also lists `modules/certificate.py`, `scripts/evaluate.py` and `data/cache/`. These are
-**not created yet**; `scripts/` and `data/cache/` are empty directories (git does not track empty folders).
+**Offline demo (Wi-Fi off).** The saved answers for the 4 samples are committed in `data/cache/lookups.json`.
+```bash
+PHISHGUARD_MODE=replay ./venv/bin/python app.py      # or set offline.mode: replay in config.yaml
+./venv/bin/python scripts/record_offline_cache.py    # re-record (needs internet + LLM_API_KEY); also checks replay
+```
+Re-record whenever a sample email or an AI prompt changes (AI answers are keyed by a hash of the prompt).
 
 **LLM setup.** Set the key in your shell config, never in the project: `export LLM_API_KEY="nvapi-..."`
 (NVIDIA Nemotron). With no key or no internet the tone check shows "could not run" and the report text comes from
@@ -54,7 +59,7 @@ cd phishguard
 python3 -m venv venv              # first time only
 source venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q               # expect: all tests pass (187 at time of writing)
+python -m pytest -q               # expect: all tests pass (221 at time of writing)
 python app.py                     # open http://127.0.0.1:5000
 ```
 
@@ -80,7 +85,7 @@ M1 parser (modules/parser.py)            -> dict of fields (no judgement)
    |
    +--> M2 sender  (modules/sender.py)   SPF / DKIM / DMARC / Reply-To       [rule-based, built]
    +--> M3 links   (modules/links.py)    lookalike, brand, WHOIS age, DNS     [rule-based, built]
-   +--> M4 cert    (modules/certificate.py) TLS handshake only                [P1, NOT built]
+   +--> M4 cert    (modules/certificate.py) TLS handshake only                [built]
    +--> M5 tone    (modules/tone.py)     LLM manipulation score 0-10          [built; capped at 15 points]
    |
 M6 scoring (modules/scoring.py)          fixed points from config.yaml -> verdict   [built; decides the verdict]
@@ -90,7 +95,7 @@ M6 scoring (modules/scoring.py)          fixed points from config.yaml -> verdic
 ```
 
 `pipeline.py :: run_pipeline(raw_bytes)` is the single entry point. It calls `parse_eml`, runs
-`check_sender`, `check_links` and `check_tone` in a `ThreadPoolExecutor` (NFR-2), then `score_email`, then
+`check_sender`, `check_links`, `check_certificate` and `check_tone` in a `ThreadPoolExecutor` (NFR-2), then `score_email`, then
 `build_report_text`, and returns a dict for the template: `parsed, checks, rows, total, raw_total, band, bands,
 not_run, by_check, report` (`report` = the three text sections). `app.py` then calls `build_report_context()`
 (the full report, with no email body) and keeps the last 20 in memory so `GET /report.pdf?id=...` can build the PDF.
@@ -105,7 +110,7 @@ CCN_Proj/
   chk/                                 LOCAL ONLY, git-ignored (personal real emails + screenshots)
   phishguard/
     app.py              Flask routes (M8): GET /, POST /analyze, GET /report.pdf
-    pipeline.py         run_pipeline(): M1 -> (M2 || M3 || M5) -> M6 -> M7 text
+    pipeline.py         run_pipeline(): M1 -> (M2 || M3 || M4 || M5) -> M6 -> M7 text
     config.yaml         ALL weights, thresholds, timeouts, tone settings (NFR-5)
     requirements.txt
     modules/
@@ -117,15 +122,17 @@ CCN_Proj/
       llm_client.py     one door to any LLM: complete_json(), LLMError, mask_addresses()
       tone.py           M5: check_tone(), validate() (quotes must exist in the email; scores under 3 count as 0)
       report.py         M7: build_report_text() with template fallback, build_report_context() for page and PDF
+      certificate.py    M4: check_certificate(), fetch_certificate() (TLS handshake only), inspect()
+      offline.py        offline demo mode: cached() wraps every network function (live / record / replay)
     data/
       trusted_domains.txt   trusted domains (edit freely; restart server after)
       samples/              4 demo .eml files (synthetic)
-      cache/                empty; for offline mode (session 6)
+      cache/lookups.json    saved internet answers for the samples (offline demo mode); committed on purpose
     templates/              dashboard.html, _report.html (the ONE report body), _footer.html (footer text),
                             report.html (A4 wrapper for the PDF; footer printed in the page margin)
     tests/                  test_parser/sender/links/scoring/app/llm_client/tone/report/pipeline_ai/dashboard_pdf.py,
                             conftest.py (fake DNS and fake AI), fixtures/
-    scripts/                empty; evaluate.py comes in session 7
+    scripts/                record_offline_cache.py (offline answers); evaluate.py comes in session 7
 ```
 
 ---
@@ -268,7 +275,7 @@ the full report below; progress indicator while running; 3-4 built-in demo email
 button. Demo emails: forged SRM exam cell (Phishing), genuine college/bank (Safe), real newsletter (Safe or
 Suspicious), one public-corpus phishing email (Phishing).
 
-### Session 6: M4 certificate check + offline mode
+### Session 6: M4 certificate check + offline mode: DONE (kept below as the design record)
 M4 (FR-4.1-4.4): TLS handshake only on port 443, 5 s timeout, never request the page. Record issuer, subject,
 validity dates, chain trust. Flag self-signed/untrusted, expired, hostname mismatch, issued < 7 days; plain
 HTTP = "no certificate". Offline mode (NFR-4): replay saved DNS, WHOIS, certificate and LLM results for the

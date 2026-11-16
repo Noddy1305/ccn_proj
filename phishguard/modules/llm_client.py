@@ -13,7 +13,7 @@ import re
 import urllib.error
 import urllib.request
 
-from modules import load_config
+from modules import load_config, offline
 
 EMAIL_ADDRESS = re.compile(r"[A-Za-z0-9._%+\-]+@([A-Za-z0-9.\-]+\.[A-Za-z]{2,})")
 
@@ -85,6 +85,14 @@ def complete_json(system, user, max_tokens, config=None):
             # could not be reached: that would only make the user wait twice as long.
             if exc.unreachable or attempt == 2:
                 raise
+
+
+def _not_saved():
+    raise LLMError("The AI answer is not in the offline cache.", unreachable=True)
+
+
+# Offline demo mode (NFR-4): replay the AI's saved answer for the same prompt.
+complete_json = offline.cached("ai", key=offline.prompt_key, on_miss=_not_saved)(complete_json)
 
 
 def _ask_once(url, payload, headers, timeout):

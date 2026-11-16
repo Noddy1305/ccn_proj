@@ -16,7 +16,7 @@ import whois
 from rapidfuzz import process
 from rapidfuzz.distance import Levenshtein
 
-from modules import load_config, status_for
+from modules import load_config, offline, status_for
 from modules.sender import DnsError, org_domain
 
 TRUSTED_FILE = Path(__file__).resolve().parent.parent / "data" / "trusted_domains.txt"
@@ -85,6 +85,18 @@ def whois_created(domain, timeout=5):
     if created.tzinfo is None:
         created = created.replace(tzinfo=timezone.utc)
     return "ok", created
+
+
+def _dns_not_saved():
+    raise DnsError("not in the offline cache")
+
+
+# Offline demo mode (NFR-4): M3's only two ways out to the internet. A WHOIS "error" is a failure, not an answer,
+# so it is never saved; when an answer is missing in replay, WHOIS returns its usual "error" value.
+dns_lookup = offline.cached("dns", key=lambda name, rtype, *_, **__: [name.lower().rstrip("."), rtype],
+                            on_miss=_dns_not_saved)(dns_lookup)
+whois_created = offline.cached("whois", key=lambda domain, *_, **__: [domain.lower()],
+                               on_miss=lambda: ("error", None), keep=lambda answer: answer[0] != "error")(whois_created)
 
 
 # ---------------------------------------------------------------- pure helpers
@@ -184,7 +196,8 @@ def inspect_domain(domain, host, cfg, now):
     try:
         # Some registries are slow (the library makes several 5 s queries): give up after
         # timeout + 1 s and treat the age as unknown rather than make the user wait.
-        status, created = job_whois.result(timeout=timeout + 1)
+        # While recording the offline answers we wait for the full answer, so replay matches the recording.
+        status, created = job_whois.result(timeout=None if offline.mode() == "record" else timeout + 1)
     except FuturesTimeout:
         status, created = "unknown", None
     pool.shutdown(wait=False)
@@ -224,7 +237,7 @@ def describe(info):
 def check_links(parsed, config=None, now=None):
     """Run M3. Never raises: any failure becomes status 'error' with 0 points (NFR-3)."""
     try:
-        return _check_links(parsed, config or load_config(), now or datetime.now(timezone.utc))
+        return _check_links(parsed, config or load_config(), now or offline.now())   # replay: time of recording
     except Exception as exc:
         return {"check": "links", "status": "error", "findings": [], "details": [],
                 "error": f"could not run: {type(exc).__name__}: {exc}"}

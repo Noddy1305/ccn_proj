@@ -16,7 +16,7 @@ import dns.exception
 import dns.resolver
 import spf
 
-from modules import load_config, status_for
+from modules import load_config, offline, status_for
 
 LIVE = "live"
 REPORTED = "reported by mail server"
@@ -59,6 +59,22 @@ def dns_txt(name, timeout=5):
     except Exception as exc:  # timeout, no nameservers, no network ...
         raise DnsError(f"{type(exc).__name__}") from exc
     return ["".join(s.decode("utf-8", "replace") for s in r.strings) for r in answers]
+
+
+def _dns_not_saved():
+    raise DnsError("not in the offline cache")
+
+
+def _spf_dns_not_saved():
+    raise spf.TempError("DNS answer not in the offline cache")
+
+
+# Offline demo mode (NFR-4): these two are the only ways M2 reaches DNS, so wrapping them is enough.
+# pyspf does its own lookups through spf.DNSLookup, so that one is wrapped where pyspf will find it.
+dns_txt = offline.cached("dns_txt", key=lambda name, *_, **__: [name.lower().rstrip(".")],
+                         on_miss=_dns_not_saved)(dns_txt)
+spf.DNSLookup = offline.cached("spf_dns", key=lambda name, qtype, *_, **__: [str(name).lower().rstrip("."), str(qtype)],
+                               on_miss=_spf_dns_not_saved)(spf.DNSLookup)
 
 
 # ---------------------------------------------------------------- Authentication-Results

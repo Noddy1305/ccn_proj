@@ -12,7 +12,7 @@ import json
 import re
 from datetime import datetime
 
-from modules import llm_client, load_config
+from modules import llm_client, load_config, offline
 from modules.llm_client import LLMError, mask_addresses
 from modules.scoring import BANDS
 
@@ -94,7 +94,8 @@ def validate(answer, verdict):
     return text
 
 
-CHECK_TITLES = {"sender": "Sender (SPF, DKIM, DMARC)", "links": "Link and domain", "tone": "Tone (AI)"}
+CHECK_TITLES = {"sender": "Sender (SPF, DKIM, DMARC)", "links": "Link and domain",
+                "certificate": "Certificate (TLS)", "tone": "Tone (AI)"}
 
 
 def build_report_context(result, source, now=None):
@@ -122,6 +123,7 @@ def build_report_context(result, source, now=None):
                   "to": [mask_addresses(a) for a in parsed["to"]], "subject": parsed["subject"],
                   "date": parsed["date"], "sending_ip": parsed["sending_ip"] or "not found"},
         "checks": checks, "flags": result["rows"], "not_run": result["not_run"], "text": result["report"],
+        "offline": offline.describe(),
     }
 
 

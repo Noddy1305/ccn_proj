@@ -7,12 +7,14 @@ from pathlib import Path
 import yaml
 from flask import Flask, Response, render_template, request
 
+from modules import offline
 from modules.parser import ParseError
-from modules.report import build_report_context
+from modules.report import CHECK_TITLES, build_report_context
 from pipeline import run_pipeline
 
 BASE = Path(__file__).parent
 CONFIG = yaml.safe_load((BASE / "config.yaml").read_text())
+offline.mode()        # refuse to start with a typo in the offline mode (better than silently going online)
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = CONFIG["app"]["max_upload_mb"] * 1024 * 1024 + 4096
@@ -47,7 +49,7 @@ def _page(error=None, result=None, source="", selected="", report=None, report_i
         parsed=result.get("parsed"), checks=result.get("checks", []), rows=result.get("rows", []),
         total=result.get("total", 0), band=result.get("band"), bands=result.get("bands", []),
         raw_total=result.get("raw_total", 0), not_run=result.get("not_run", []),
-        report=report, report_id=report_id), status
+        report=report, report_id=report_id, titles=CHECK_TITLES, offline_note=offline.describe()), status
 
 
 @app.get("/")

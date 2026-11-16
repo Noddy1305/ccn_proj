@@ -1,8 +1,24 @@
-"""Every test runs against a fake, empty DNS and a fake AI, so tests never touch the internet."""
+"""Every test runs against a fake, empty DNS, a fake TLS handshake and a fake AI, so tests never touch the internet."""
 import pytest
 import spf
 
-from modules import links, llm_client, sender
+from modules import certificate, links, llm_client, offline, sender
+
+# The real network functions (already wrapped for offline mode), captured before any fake replaces them.
+# Only the offline replay tests put these back, and those tests block the network first.
+REAL = {(sender, "dns_txt"): sender.dns_txt, (spf, "DNSLookup"): spf.DNSLookup,
+        (links, "dns_lookup"): links.dns_lookup, (links, "whois_created"): links.whois_created,
+        (certificate, "fetch_certificate"): certificate.fetch_certificate,
+        (llm_client, "complete_json"): llm_client.complete_json}
+
+
+@pytest.fixture(autouse=True)
+def live_mode():
+    """Tests always start in live mode, whatever config.yaml or PHISHGUARD_MODE say."""
+    offline.reset()
+    offline.set_mode("live")
+    yield
+    offline.reset()
 
 
 class FakeZone:
@@ -78,6 +94,33 @@ def ai(monkeypatch):
     fake = FakeAI()
     monkeypatch.setattr(llm_client, "complete_json", fake.complete_json)
     return fake
+
+
+class FakeTLS:
+    """Pretend TLS handshakes. `.certs[host]` = {"der": ..., "verify_error": ...}; any other host cannot be reached."""
+
+    def __init__(self):
+        self.certs, self.calls = {}, []
+
+    def fetch(self, host, timeout=5):
+        self.calls.append(host)
+        if host not in self.certs:
+            raise certificate.CertError("no network in tests")
+        return self.certs[host]
+
+
+@pytest.fixture(autouse=True)
+def tls(monkeypatch):
+    fake = FakeTLS()
+    monkeypatch.setattr(certificate, "fetch_certificate", fake.fetch)
+    return fake
+
+
+@pytest.fixture
+def real_network_functions(monkeypatch, zone, ai, tls):
+    """Undo the fakes: put back the real (offline-wrapped) lookups. Use only together with a blocked network."""
+    for (module, name), fn in REAL.items():
+        monkeypatch.setattr(module, name, fn)
 
 
 @pytest.fixture(autouse=True)

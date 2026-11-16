@@ -19,7 +19,7 @@
   .report .rp-score { font-size: 1.3rem; font-weight: 700; margin-left: .6rem; }
   .report .rp-tag { font-size: .78rem; padding: .05rem .45rem; border-radius: 99px; background: #e5e7eb; }
   .report .rp-tag.pass { background: #dcfce7; } .report .rp-tag.warn { background: #fef3c7; }
-  .report .rp-tag.fail { background: #fee2e2; } .report .rp-tag.error { background: #e5e7eb; }
+  .report .rp-tag.fail { background: #fee2e2; } .report .rp-tag.error, .report .rp-tag.none { background: #e5e7eb; }
   .report .rp-line { margin-bottom: .25rem; }
   .report .rp-footer { margin-top: .7rem; padding-top: .4rem; border-top: 1px solid #e5e7eb; break-inside: avoid; }
 </style>
@@ -27,6 +27,7 @@
 <section class="report">
   <h1>PhishGuard-AI Phishing Analysis Report</h1>
   <p class="rp-meta">Analysed {{ report.generated }} &middot; {{ report.source }}</p>
+  {% if report.offline %}<p class="rp-meta"><b>{{ report.offline }}</b></p>{% endif %}
 
   <div class="rp-verdict">
     <span class="rp-pill {{ report.verdict }}">{{ report.verdict_label }}</span>
@@ -59,7 +60,7 @@
     <tr><th>Check</th><th>Status</th><th>Evidence</th></tr>
     {% for c in report.checks %}<tr>
       <td>{{ c.title }}</td>
-      <td><span class="rp-tag {{ c.status }}">{{ c.status }}</span></td>
+      <td><span class="rp-tag {{ c.status }}">{{ "n/a" if c.status == "none" else c.status }}</span></td>
       <td>{% if c.error %}{{ c.error }}{% endif %}{% for l in c.lines %}<div class="rp-line"><b>{{ l.name }}:</b> {{ l.result }}. {{ l.evidence }}</div>{% endfor %}</td>
     </tr>{% endfor %}
   </table>

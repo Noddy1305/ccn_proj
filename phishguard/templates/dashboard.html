@@ -19,7 +19,7 @@
   h2 { margin-top: 1.5rem; }
   .card { border: 1px solid #e5e7eb; border-left-width: 6px; border-radius: 8px; padding: .8rem 1rem; margin: 1rem 0; }
   .card.pass { border-left-color: #16a34a; } .card.warn { border-left-color: #d97706; }
-  .card.fail { border-left-color: #dc2626; } .card.error { border-left-color: #6b7280; }
+  .card.fail { border-left-color: #dc2626; } .card.error, .card.none { border-left-color: #6b7280; }
   .tag { font-size: .8rem; padding: .1rem .5rem; border-radius: 99px; background: #e5e7eb; }
   .src { color: #6b7280; font-size: .85rem; }
   .card td, .card th { word-break: normal; }
@@ -46,12 +46,14 @@
   .verdict.safe { border-left-color: #16a34a; } .verdict.suspicious { border-left-color: #d97706; } .verdict.phishing { border-left-color: #dc2626; }
   .verdict .big { font-size: 1.4rem; padding: .3rem 1.1rem; }
   .verdict .big-score { font-size: 1.6rem; font-weight: 700; margin-left: .8rem; }
+  .offline { background: #f5f3ff; border: 1px solid #c4b5fd; color: #4c1d95; padding: .5rem .8rem; border-radius: 6px; font-weight: 600; }
   details.tech { margin-top: 1.5rem; } details.tech > summary { cursor: pointer; font-size: 1.2rem; font-weight: 700; }
 </style>
 </head>
 <body>
 <h1>PhishGuard-AI</h1>
-<p class="sub">Parser (M1), sender (M2), link (M3) and AI tone (M5) checks, a rule-based verdict (M6) and an AI-written explanation (M7). The certificate check comes later.</p>
+<p class="sub">Parser (M1), sender (M2), link (M3), certificate (M4) and AI tone (M5) checks, a rule-based verdict (M6) and an AI-written explanation (M7).</p>
+{% if offline_note %}<p class="offline" role="note">{{ offline_note }}</p>{% endif %}
 
 <form method="post" action="/analyze" enctype="multipart/form-data" data-busy>
   <div class="drop" id="drop">
@@ -85,7 +87,7 @@
 <h2>Check details</h2>
 {% for c in checks %}
 <div class="card {{ c.status }}">
-  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain', 'tone': 'Tone (AI)'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
+  <h2 style="margin-top:0">{{ titles.get(c.check, c.check | capitalize) }} check <span class="tag">{{ "n/a" if c.status == "none" else c.status }}</span></h2>
   {% if c.error %}<p>{{ c.error }}</p>{% endif %}
   <table>
     <colgroup><col style="width:24%"><col style="width:20%"><col style="width:56%"></colgroup>

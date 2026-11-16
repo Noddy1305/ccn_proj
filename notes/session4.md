@@ -290,7 +290,7 @@ Take a phishing email with subject "Urgent: verify now" and a body saying "your 
     JSON is easy for the program to read, but an AI may still return broken, incomplete or wrong-sized answers. We validate each one (score is a number, all three sections exist, a sensible length). Anything that fails goes to the safe fallback instead of crashing.
 
 11. **Is the result the same every time?**
-    The verdict rules are fully repeatable. The AI is set to temperature 0, which makes it very repeatable, but providers do not guarantee it. So the tone score may vary slightly between runs. In session 6 we will save the AI's answers for the demo emails so the demo is the same every time.
+    The verdict rules are fully repeatable. The AI is set to temperature 0, which makes it very repeatable, but providers do not guarantee it. So the tone score may vary slightly between runs. For the demo, offline mode (session 6) replays the AI's saved answers for the sample emails, so the demo gives the same result every time.
 
 ## 7. Remember this
 
