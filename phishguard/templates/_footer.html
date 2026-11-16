@@ -1,0 +1,4 @@
+{# The footer sentence (FR-7.6), written once. The dashboard shows it under the report; the PDF prints it in the page margin. #}
+{% macro text(report) -%}
+The verdict and score come from fixed rules, not from AI. {% if report.text.source == 'ai' %}The explanation was written by an AI and may contain mistakes.{% else %}The explanation was filled in from a template because the AI was not available{% if report.text.note %} ({{ report.text.note }}){% endif %}.{% endif %} This report does not include the email body.
+{%- endmacro %}

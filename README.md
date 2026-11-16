@@ -23,22 +23,25 @@ The build is split into 8 sessions (PRD section 11). Status at the time of writi
 | 1 | Setup + email parser (M1) | **Done** |
 | 2 | Sender check: SPF, DKIM, DMARC (M2) | **Done** |
 | 3 | Link and domain check (M3) | **Done** |
-| 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **M6 done.** M5 and M7 **not built** (waiting on an LLM decision) |
-| 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | Not started (basic page exists) |
+| 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **Done** (Nemotron main, Ollama fallback in config; local model not downloaded yet) |
+| 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | **Done** (P0 complete) |
 | 6 | Certificate check (M4) + offline cached demo mode | Not started |
 | 7 | Evaluation on 100 emails, tune weights once, freeze | Not started |
 | 8 | Review prep: report, slides, viva Q&A | Not started |
 
 Optional P2 (only if time remains): batch mode, analyse a folder and export CSV.
 
-What works today: upload a `.eml` (or pick a built-in sample) at the web page. It parses the email, runs the
-sender check and the link check in parallel, scores them with M6, and shows a points table, a verdict and
-per-check evidence cards. **Not built yet:** tone analysis, LLM report, HTML/PDF report, certificate check,
-offline mode, proper dashboard polish, `scripts/evaluate.py`.
+What works today: upload (or drag and drop) a `.eml`, or pick a built-in sample, at the web page. It parses the
+email, runs the sender, link and AI tone checks in parallel, scores them with M6, and shows a verdict badge, per-check
+evidence cards and a report (plain-English text, check table, points table) that can be downloaded as a PDF.
+**Not built yet:** certificate check (M4), offline mode, `scripts/evaluate.py`.
 
-Note the PRD folder structure lists `modules/certificate.py`, `modules/tone.py`, `modules/report.py`,
-`modules/llm_client.py`, `templates/report.html`, `scripts/evaluate.py` and `data/cache/`. These files are
+The PRD folder structure also lists `modules/certificate.py`, `scripts/evaluate.py` and `data/cache/`. These are
 **not created yet**; `scripts/` and `data/cache/` are empty directories (git does not track empty folders).
+
+**LLM setup.** Set the key in your shell config, never in the project: `export LLM_API_KEY="nvapi-..."`
+(NVIDIA Nemotron). With no key or no internet the tone check shows "could not run" and the report text comes from
+a template. For the local backup: `ollama pull qwen2.5:3b`, then set `llm.provider: ollama` in `config.yaml`.
 
 ---
 
@@ -51,11 +54,14 @@ cd phishguard
 python3 -m venv venv              # first time only
 source venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q               # expect: all tests pass (107 at time of writing)
+python -m pytest -q               # expect: all tests pass (187 at time of writing)
 python app.py                     # open http://127.0.0.1:5000
 ```
 
-- The tests use a **fake DNS/WHOIS** and need **no internet**.
+- The PDF report uses **WeasyPrint**, which needs the Pango system library (already present on most Linux desktops;
+  on Ubuntu: `sudo apt install libpango-1.0-0 libpangoft2-1.0-0`). Without it the PDF button shows a clear message
+  and the rest of the dashboard still works.
+- The tests use a **fake DNS/WHOIS and a fake AI** and need **no internet**.
 - The web page does **live** DNS/WHOIS lookups, so it needs internet. Offline it degrades gracefully
   (checks show "could not run" or "reported by mail server" and add 0 points; nothing crashes).
 - Stop the server with Ctrl+C. After editing `data/trusted_domains.txt`, **restart** (it is cached).
@@ -75,17 +81,19 @@ M1 parser (modules/parser.py)            -> dict of fields (no judgement)
    +--> M2 sender  (modules/sender.py)   SPF / DKIM / DMARC / Reply-To       [rule-based, built]
    +--> M3 links   (modules/links.py)    lookalike, brand, WHOIS age, DNS     [rule-based, built]
    +--> M4 cert    (modules/certificate.py) TLS handshake only                [P1, NOT built]
-   +--> M5 tone    (modules/tone.py)     LLM manipulation score 0-10          [NOT built]
+   +--> M5 tone    (modules/tone.py)     LLM manipulation score 0-10          [built; capped at 15 points]
    |
 M6 scoring (modules/scoring.py)          fixed points from config.yaml -> verdict   [built; decides the verdict]
    |
-   +--> M7 report  (modules/report.py)   LLM text + HTML + PDF                [NOT built]
-   +--> M8 dashboard (app.py + templates/dashboard.html)                      [basic version built]
+   +--> M7 report  (modules/report.py)   LLM text (template fallback) + report context   [built]
+   +--> M8 dashboard + PDF (app.py, templates/dashboard.html, _report.html, report.html)  [built]
 ```
 
 `pipeline.py :: run_pipeline(raw_bytes)` is the single entry point. It calls `parse_eml`, runs
-`check_sender` and `check_links` in a `ThreadPoolExecutor` (NFR-2), then calls `score_email`, and returns a
-dict for the template: `parsed, checks, rows, total, raw_total, band, bands, not_run, by_check`.
+`check_sender`, `check_links` and `check_tone` in a `ThreadPoolExecutor` (NFR-2), then `score_email`, then
+`build_report_text`, and returns a dict for the template: `parsed, checks, rows, total, raw_total, band, bands,
+not_run, by_check, report` (`report` = the three text sections). `app.py` then calls `build_report_context()`
+(the full report, with no email body) and keeps the last 20 in memory so `GET /report.pdf?id=...` can build the PDF.
 **New checks plug in here**: add the job to the pool and append its result to `checks`.
 
 ### Folder map
@@ -93,11 +101,11 @@ dict for the template: `parsed, checks, rows, total, raw_total, band, bands, not
 ```text
 CCN_Proj/
   README.md  CLAUDE.md  AGENTS.md  PRD.md  .gitignore
-  notes/session1.md .. session4.md     beginner study notes (see section 8)
+  notes/session1.md .. session5.md     beginner study notes (see section 8; session4.md also covers the LLM part)
   chk/                                 LOCAL ONLY, git-ignored (personal real emails + screenshots)
   phishguard/
-    app.py              Flask routes (M8 basic): GET /, POST /analyze
-    pipeline.py         run_pipeline(): M1 -> (M2 || M3) -> M6
+    app.py              Flask routes (M8): GET /, POST /analyze, GET /report.pdf
+    pipeline.py         run_pipeline(): M1 -> (M2 || M3 || M5) -> M6 -> M7 text
     config.yaml         ALL weights, thresholds, timeouts, tone settings (NFR-5)
     requirements.txt
     modules/
@@ -106,12 +114,17 @@ CCN_Proj/
       sender.py         M2: check_sender(), org_domain(), DnsError, dns_txt()
       links.py          M3: check_links(), lookalike_of(), brand_in(), whois_created(), dns_lookup()
       scoring.py        M6: score_email(), verdict_for(), BANDS
+      llm_client.py     one door to any LLM: complete_json(), LLMError, mask_addresses()
+      tone.py           M5: check_tone(), validate() (quotes must exist in the email; scores under 3 count as 0)
+      report.py         M7: build_report_text() with template fallback, build_report_context() for page and PDF
     data/
       trusted_domains.txt   trusted domains (edit freely; restart server after)
       samples/              4 demo .eml files (synthetic)
       cache/                empty; for offline mode (session 6)
-    templates/dashboard.html
-    tests/                  test_parser/sender/links/scoring/app.py, conftest.py, fixtures/
+    templates/              dashboard.html, _report.html (the ONE report body), _footer.html (footer text),
+                            report.html (A4 wrapper for the PDF; footer printed in the page margin)
+    tests/                  test_parser/sender/links/scoring/app/llm_client/tone/report/pipeline_ai/dashboard_pdf.py,
+                            conftest.py (fake DNS and fake AI), fixtures/
     scripts/                empty; evaluate.py comes in session 7
 ```
 
@@ -230,7 +243,7 @@ hostname mismatch 15, issued < 7 days 5), and an `llm:` section (see section 7).
 
 ## 7. What is left to build (and the agreed design)
 
-### Session 4 remainder: M5 tone + M7 report (LLM)
+### Session 4 remainder: M5 tone + M7 report (LLM): DONE (kept below as the design record)
 **Decision already made by the team:** use the **NVIDIA Nemotron API** as the main provider (API key read from
 the environment variable **`LLM_API_KEY`**, never written in code or committed) and **Ollama with a small local
 model** as the offline fallback, **switchable in `config.yaml`**. Everything goes through **one interface** in
@@ -249,7 +262,7 @@ model** as the offline fallback, **switchable in `config.yaml`**. Everything goe
   have `pipeline.py` add M5 to the parallel checks and M7 after M6.
 - The **template-based report, HTML report and PDF do not need an LLM** and can be built first.
 
-### Session 5: M8 dashboard
+### Session 5: M8 dashboard: DONE (kept below as the design record)
 Verdict badge (green/amber/red) + score out of 100; one card per check (pass/warn/fail/error) with evidence;
 the full report below; progress indicator while running; 3-4 built-in demo emails; "Download report (PDF)"
 button. Demo emails: forged SRM exam cell (Phishing), genuine college/bank (Safe), real newsletter (Safe or

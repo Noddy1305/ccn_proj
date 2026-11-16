@@ -1,0 +1,83 @@
+{# The report body. ONE template used by the dashboard and the PDF (FR-7.5). No links, no external files. #}
+{% import "_footer.html" as footer %}
+<style>
+  .report { font-family: system-ui, "DejaVu Sans", Arial, sans-serif; color: #1f2937; line-height: 1.35; }
+  .report h1 { font-size: 1.45rem; margin: 0 0 .2rem; }
+  .report h2 { font-size: 1.05rem; margin: .8rem 0 .3rem; padding-bottom: .15rem; border-bottom: 2px solid #e5e7eb; break-after: avoid; }
+  .report h3 { font-size: .92rem; margin: .6rem 0 .1rem; }
+  .report p { margin: .25rem 0; }
+  .report .rp-meta, .report .rp-note { color: #6b7280; font-size: .85rem; }
+  .report table { width: 100%; border-collapse: collapse; table-layout: fixed; margin: .3rem 0; font-size: .8rem; }
+  .report th, .report td { width: auto; text-align: left; vertical-align: top; padding: .22rem .45rem; border: 1px solid #e5e7eb; overflow-wrap: break-word; }
+  .report .rp-block { break-inside: avoid; }   /* a heading never gets separated from its table */
+  .report th { background: #f3f4f6; }
+  .report tr { break-inside: avoid; }
+  .report tr.total td { font-weight: 700; background: #f9fafb; }
+  .report .rp-verdict { margin: .8rem 0; }
+  .report .rp-pill { display: inline-block; padding: .2rem .8rem; border-radius: 99px; color: #fff; font-weight: 700; }
+  .report .rp-pill.safe { background: #16a34a; } .report .rp-pill.suspicious { background: #d97706; } .report .rp-pill.phishing { background: #dc2626; }
+  .report .rp-score { font-size: 1.3rem; font-weight: 700; margin-left: .6rem; }
+  .report .rp-tag { font-size: .78rem; padding: .05rem .45rem; border-radius: 99px; background: #e5e7eb; }
+  .report .rp-tag.pass { background: #dcfce7; } .report .rp-tag.warn { background: #fef3c7; }
+  .report .rp-tag.fail { background: #fee2e2; } .report .rp-tag.error { background: #e5e7eb; }
+  .report .rp-line { margin-bottom: .25rem; }
+  .report .rp-footer { margin-top: .7rem; padding-top: .4rem; border-top: 1px solid #e5e7eb; break-inside: avoid; }
+</style>
+
+<section class="report">
+  <h1>PhishGuard-AI Phishing Analysis Report</h1>
+  <p class="rp-meta">Analysed {{ report.generated }} &middot; {{ report.source }}</p>
+
+  <div class="rp-verdict">
+    <span class="rp-pill {{ report.verdict }}">{{ report.verdict_label }}</span>
+    <span class="rp-score">{{ report.score }} / 100</span>
+  </div>
+
+  <h2>Plain-English report</h2>
+  <h3>What this email is</h3><p>{{ report.text.summary }}</p>
+  <h3>What gave it away</h3><p>{{ report.text.evidence_explained }}</p>
+  <h3>What you should do</h3><p>{{ report.text.recommended_actions }}</p>
+
+  <div class="rp-block">
+  <h2>Email details</h2>
+  <table>
+    <colgroup><col style="width:24%"><col style="width:76%"></colgroup>
+    <tr><th>From</th><td>{{ report.email.from }}</td></tr>
+    {% if report.email.reply_to %}<tr><th>Reply-To</th><td>{{ report.email.reply_to }}</td></tr>{% endif %}
+    {% if report.email.return_path %}<tr><th>Return-Path</th><td>{{ report.email.return_path }}</td></tr>{% endif %}
+    <tr><th>To</th><td>{{ report.email.to | join(', ') or '—' }}</td></tr>
+    <tr><th>Subject</th><td>{{ report.email.subject }}</td></tr>
+    <tr><th>Date</th><td>{{ report.email.date }}</td></tr>
+    <tr><th>Sending server IP</th><td>{{ report.email.sending_ip }}</td></tr>
+  </table>
+  </div>
+
+  <div class="rp-block">
+  <h2>Checks performed</h2>
+  <table>
+    <colgroup><col style="width:22%"><col style="width:11%"><col style="width:67%"></colgroup>
+    <tr><th>Check</th><th>Status</th><th>Evidence</th></tr>
+    {% for c in report.checks %}<tr>
+      <td>{{ c.title }}</td>
+      <td><span class="rp-tag {{ c.status }}">{{ c.status }}</span></td>
+      <td>{% if c.error %}{{ c.error }}{% endif %}{% for l in c.lines %}<div class="rp-line"><b>{{ l.name }}:</b> {{ l.result }}. {{ l.evidence }}</div>{% endfor %}</td>
+    </tr>{% endfor %}
+  </table>
+  </div>
+
+  <div class="rp-block">
+  <h2>Points breakdown</h2>
+  <table>
+    <colgroup><col style="width:10%"><col style="width:24%"><col style="width:19%"><col style="width:47%"></colgroup>
+    <tr><th>Check</th><th>Red flag found</th><th>Points</th><th>Evidence</th></tr>
+    {% for r in report.flags %}<tr><td>{{ r.check | capitalize }}</td><td>{{ r.title }}</td><td>+{{ '%g' % r.points }}</td><td>{{ r.evidence }}</td></tr>
+    {% else %}<tr><td colspan="4">No red flags found: 0 points.</td></tr>{% endfor %}
+    <tr class="total"><td colspan="2">Total score</td>
+      <td>{{ report.score }} / 100{% if report.raw_total > 100 %}<br><span class="rp-note">(rows add up to {{ '%g' % report.raw_total }}, capped at 100)</span>{% endif %}</td>
+      <td>Verdict: <span class="rp-pill {{ report.verdict }}">{{ report.verdict_label }}</span></td></tr>
+  </table>
+  </div>
+  {% if report.not_run %}<p class="rp-note"><b>Could not run:</b> {{ report.not_run | join(', ') }} (added 0 points).</p>{% endif %}
+
+  {% if not pdf %}<p class="rp-note rp-footer">{{ footer.text(report) }}</p>{% endif %}   {# in the PDF the footer sits in the page margin #}
+</section>

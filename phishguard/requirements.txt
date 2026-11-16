@@ -8,3 +8,4 @@ dkimpy
 cryptography
 python-whois
 rapidfuzz
+weasyprint

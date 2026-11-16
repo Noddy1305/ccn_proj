@@ -403,7 +403,7 @@ The build runs in eight sessions; after session 5 the project is complete at P0 
 
 ## 15. Changes since v1 (as built, sessions 1-4)
 
-Status: M1, M2, M3, M5, M6 and the M7 report text are built; the M7 PDF, M8 (full dashboard), M4 and offline mode are not. Decisions and deviations made during the build:
+Status: M1, M2, M3, M5, M6, M7 (text, report page and PDF) and M8 are built, so P0 is complete (sessions 1-5). M4, offline mode and the evaluation are not. Decisions and deviations made during the build:
 
 | Area | v1 said | As built / decided | Why |
 | --- | --- | --- | --- |
@@ -421,8 +421,16 @@ Status: M1, M2, M3, M5, M6 and the M7 report text are built; the M7 PDF, M8 (ful
 | Tone validation (FR-5.2) | JSON score and tactics | Every quote must appear in the text that was sent; unknown tactic names are dropped; with no verified quote the score becomes 0; score clamped to 0-10 | The PRD risk "LLM invents tactics" |
 | Tone floor | Points = 1.5 x score | Scores below 3 count as 0 (no finding, green card); the page still shows the raw score as "too low to count". `tone.min_score` in config | In the first live run a plain timetable email got 1/10, an amber card and a report calling it "slightly manipulative". Ordinary mail often scores 1-2 |
 | Report text (FR-7.2 to 7.4) | Template if invalid | Template also used if a field is missing, the length is outside 60-320 words, or a Suspicious/Phishing text calls the email safe; the page shows which source wrote the text and why | Keeps the AI from contradicting the verdict (FR-7.3) |
+| LLM retry | Not specified | A broken, empty or badly shaped answer is asked for once more; an unreachable service or timeout is never retried | In a live run one "broken JSON" reply dropped `corpus_phish.eml` from 32 (Suspicious) to 20 (Safe) |
 | LLM timing | Not specified | 8 s timeout; tone runs beside M2 and M3; if the tone call could not reach the AI, the report call is skipped | Keeps one email near the 15 s budget when the network is down |
 | Privacy (PRV-2) | Mask addresses | Tone gets the subject and 4,000 characters of body with addresses masked (`***@domain`); the report gets verdict, score and masked findings only | Domains stay because they are the evidence |
 | Repeatability (FR-6.4) | Same input, same score | Holds for the rules. Tone at temperature 0 is close to repeatable but not guaranteed by the provider; session 6 will save AI answers for the demo emails | Honest limit to state in the viva |
-| Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`; now created: `tone.py`, `report.py` (text part only), `llm_client.py`; not yet created: `certificate.py`, `report.html`, `evaluate.py` | Documentation and shared config helpers |
+| Report template (FR-7.5) | One HTML template | `templates/_report.html` holds the report body and its own scoped styles; `report.html` is only the A4 wrapper for the PDF; the dashboard includes the same partial | The page and the PDF cannot drift apart |
+| Report footer (FR-7.6) | Footer at the end of the report | The sentence lives in `_footer.html`; the page shows it under the report, the PDF prints it in the bottom page margin; tests require at most 2 pages per sample | A footer in the normal flow ended up alone on a near-empty page 2 |
+| Report data (FR-7.6, 7.8) | Not specified | `build_report_context()` builds one plain dict: no email body, recipients masked as `***@domain`, links never rendered as clickable | The PDF and the stored report can never leak the body (SAF-1) |
+| PDF download (FR-8.7) | Button downloads the PDF | The finished report (never the email) is kept in memory under a random token, last 20 only, nothing on disk; `GET /report.pdf?id=...`; the file name uses the time of analysis; an unknown or expired id gives a friendly 404 | Stateless-looking download without storing emails (PRV-1) |
+| WeasyPrint | Used for the PDF | Imported inside the PDF route; a missing library gives a clear message and the dashboard still works | Pango can be hard to install on other laptops |
+| Dashboard (M8) | Upload, badge, cards, report, progress, samples | Drag-and-drop upload, verdict banner with score, "Checking..." indicator, 4 built-in samples (forged, genuine, newsletter, corpus), parsed technical details collapsed at the bottom | FR-8.1 to 8.7 |
+| Report prompt inputs | Verdict, score, findings | Also leaves out the DMARC `policy p=...` text and the tone arithmetic, and the prompt forbids invented causes | In live runs the AI kept writing "DMARC failed because the policy is none" and "scaled to 15 points" |
+| Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`, `templates/_report.html`; created: `tone.py`, `report.py`, `llm_client.py`, `report.html`; not yet created: `certificate.py`, `evaluate.py` | Documentation and shared config helpers |
 | Performance | 5 s per lookup, parallel | M2 and M3 run side by side; WHOIS gives up after 6 s; at most 10 untrusted domains looked up | Keep one email under 15 s |

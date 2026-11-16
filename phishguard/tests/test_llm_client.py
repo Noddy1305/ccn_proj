@@ -83,6 +83,33 @@ def test_empty_or_unusable_answers_raise(wire, content):
         complete_json("s", "u", 100, cfg())
 
 
+def test_a_broken_answer_is_retried_once_and_can_recover(wire, monkeypatch):
+    answers = iter([reply('{"broken": '), reply('{"ok": true}')])
+    calls = []
+    monkeypatch.setattr(llm_client, "_post", lambda *a: (calls.append(a), next(answers))[1])
+    assert complete_json("s", "u", 100, cfg()) == {"ok": True} and len(calls) == 2
+
+
+def test_two_broken_answers_in_a_row_still_fail(wire, monkeypatch):
+    calls = []
+    monkeypatch.setattr(llm_client, "_post", lambda *a: (calls.append(a), reply("not json"))[1])
+    with pytest.raises(LLMError):
+        complete_json("s", "u", 100, cfg())
+    assert len(calls) == 2
+
+
+def test_unreachable_service_is_never_retried(wire, monkeypatch):
+    calls = []
+
+    def down(*args):
+        calls.append(args)
+        raise urllib.error.URLError("no network")
+    monkeypatch.setattr(llm_client, "_post", down)
+    with pytest.raises(LLMError):
+        complete_json("s", "u", 100, cfg())
+    assert len(calls) == 1
+
+
 def test_unexpected_reply_shape_raises(wire):
     wire.response = {"error": "nope"}
     with pytest.raises(LLMError, match="unexpected shape"):

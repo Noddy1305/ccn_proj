@@ -1,0 +1,18 @@
+{% import "_footer.html" as footer %}{% set pdf = true %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PhishGuard-AI report</title>
+<style>
+  /* The footer is printed in the bottom margin of every page, so it can never be pushed onto a page of its own. */
+  @page { size: A4; margin: 11mm 13mm 15mm;
+          @bottom-center { content: "{{ footer.text(report) | replace('"', '') | replace('\\', '') | replace('<', '') | safe }}";
+                           font-family: system-ui, "DejaVu Sans", Arial, sans-serif; font-size: 7.5pt; color: #6b7280;
+                           vertical-align: top; padding-top: 2mm; } }
+  body { margin: 0; font-size: 10pt; }
+</style>
+</head>
+<body>
+{% include "_report.html" %}
+</body>
+</html>

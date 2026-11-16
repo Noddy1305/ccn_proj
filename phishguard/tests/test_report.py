@@ -81,6 +81,18 @@ def test_ai_error_message_is_kept_as_the_note(ai):
 
 # ---------- privacy (FR-7.1, PRV-2)
 
+def test_ai_is_not_fed_the_details_it_misreads_as_causes(ai):
+    rows = [{"check": "sender", "id": "dmarc_fail", "title": "DMARC failed", "points": 25,
+             "evidence": "From domain srmist.edu.in, policy p=none; SPF fail for evil.com (did not pass), no DKIM found"},
+            {"check": "tone", "id": "tone_manipulation", "title": "Manipulative wording (AI)", "points": 12,
+             "evidence": "Manipulation score 8/10 x 1.5 (capped at 15)"}]
+    ai.answers = lambda s, u: good()
+    build_report_text(result(rows=rows), CFG)
+    sent = ai.calls[0]["user"]
+    assert "p=none" not in sent and "x 1.5" not in sent and "capped" not in sent
+    assert "From domain srmist.edu.in, SPF fail for evil.com" in sent and "pressures the reader" in sent
+
+
 def test_ai_gets_only_verdict_score_and_masked_findings(ai):
     ai.answers = lambda s, u: good()
     build_report_text(result(), CFG)

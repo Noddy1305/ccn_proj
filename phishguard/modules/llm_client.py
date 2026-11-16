@@ -76,8 +76,20 @@ def complete_json(system, user, max_tokens, config=None):
     if settings.get("disable_thinking"):
         payload["chat_template_kwargs"] = {"enable_thinking": False}
 
+    url = settings["base_url"].rstrip("/") + "/chat/completions"
+    for attempt in (1, 2):
+        try:
+            return _ask_once(url, payload, headers, llm["timeout_seconds"])
+        except LLMError as exc:
+            # A broken or empty answer is often a one-off, so ask once more. Never retry when the service
+            # could not be reached: that would only make the user wait twice as long.
+            if exc.unreachable or attempt == 2:
+                raise
+
+
+def _ask_once(url, payload, headers, timeout):
     try:
-        data = _post(settings["base_url"].rstrip("/") + "/chat/completions", payload, headers, llm["timeout_seconds"])
+        data = _post(url, payload, headers, timeout)
     except urllib.error.HTTPError as exc:      # never put headers (the key) in a message
         raise LLMError(f"The AI service answered with HTTP {exc.code}.", unreachable=True) from exc
     except (urllib.error.URLError, TimeoutError, OSError) as exc:

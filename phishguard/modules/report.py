@@ -1,12 +1,16 @@
-"""M7 - Report text (the AI writes words only; code makes the verdict).
+"""M7 - Report (the AI writes words only; code makes the verdict).
 
-Explains an ALREADY DECIDED verdict in plain English: what the email is, what gave it away,
-and what the reader should do. The AI sees only the verdict, score and findings (FR-7.1),
-never the email itself. If the AI is down or answers badly, a template fills the same three
-fields from the findings (FR-7.4), so a report always exists.
+build_report_text(): explains an ALREADY DECIDED verdict in plain English: what the email is,
+what gave it away, and what the reader should do. The AI sees only the verdict, score and
+findings (FR-7.1), never the email itself. If the AI is down or answers badly, a template fills
+the same three fields from the findings (FR-7.4), so a report always exists.
+
+build_report_context(): gathers everything the report page and the PDF show into one plain dict
+(FR-7.5, 7.6). It never holds the email body and masks recipient addresses (FR-7.8).
 """
 import json
 import re
+from datetime import datetime
 
 from modules import llm_client, load_config
 from modules.llm_client import LLMError, mask_addresses
@@ -35,6 +39,8 @@ Stick strictly to the findings:
 - Use only facts written in the findings. Do not say who the email pretends to be, or what department it claims to be from, unless a finding says so.
 - Keep each finding's meaning exactly. "Missing" or "none" is not "failed"; a lookalike link is not a lookalike sender.
 - Do not add reasons or causes that are not in the findings. Say what was found, not why it happened.
+  Wrong: "DMARC failed because the policy was weak". Right: "The DMARC check failed".
+- Never mention points, scaling or arithmetic. Only the score out of 100 may appear as a number.
 - Say the score only as "X out of 100". Do not call it perfect, high or low.
 
 Write simple, calm English. 120 to 200 words in total across all three fields.
@@ -43,9 +49,18 @@ Reply with JSON only, in this shape:
 
 
 def findings_for_ai(result):
-    """FR-7.1 / PRV-2: only verdict-level facts, with email addresses masked."""
-    return [{"flag": mask_addresses(r["title"]), "points": r["points"], "evidence": mask_addresses(r["evidence"])}
-            for r in result["contributions"]]
+    """FR-7.1 / PRV-2: only verdict-level facts, with email addresses masked.
+
+    Two details are left out because the AI kept misreading them as causes: the DMARC "policy p=none"
+    text ("DMARC failed because the policy is none") and the tone score arithmetic ("scaled to 15 points")."""
+    findings = []
+    for r in result["contributions"]:
+        evidence = mask_addresses(r["evidence"])
+        if r["id"] == "tone_manipulation":
+            evidence = "the wording of the email pressures the reader"
+        findings.append({"flag": mask_addresses(r["title"]), "points": r["points"],
+                         "evidence": re.sub(r"policy p=\w+;?\s*", "", evidence)})
+    return findings
 
 
 def template_text(result):
@@ -77,6 +92,37 @@ def validate(answer, verdict):
     if verdict in ("suspicious", "phishing") and CONTRADICTS_VERDICT.search(" ".join(text.values())):
         raise LLMError("The AI report contradicted the verdict.")      # FR-7.3
     return text
+
+
+CHECK_TITLES = {"sender": "Sender (SPF, DKIM, DMARC)", "links": "Link and domain", "tone": "Tone (AI)"}
+
+
+def build_report_context(result, source, now=None):
+    """Everything the report page and the PDF show, in one plain dict (FR-7.5, FR-7.6).
+
+    This is the ONLY thing kept after an analysis (so the PDF button can fetch it later).
+    It never holds the email body, and recipient addresses are masked (FR-7.8, PRV-1).
+    """
+    now = now or datetime.now()
+    parsed = result["parsed"]
+    sender = parsed["from"]
+    labels = dict((k, n) for k, n, _, _ in BANDS)
+    checks = []
+    for c in result["checks"]:
+        lines = [{"name": d["name"], "result": d["result"] + (f" (p={d['policy']})" if d.get("policy") else ""),
+                  "evidence": d["evidence"]} for d in c.get("details", [])]
+        checks.append({"title": CHECK_TITLES.get(c["check"], c["check"].capitalize()), "status": c["status"],
+                       "error": c.get("error", ""), "lines": lines})
+    return {
+        "generated": now.strftime("%d %b %Y, %H:%M"), "stamp": now.strftime("%Y%m%d_%H%M"), "source": source,
+        "verdict": result["band"], "verdict_label": labels[result["band"]],
+        "score": result["total"], "raw_total": result["raw_total"],
+        "email": {"from": f"{sender['name']} <{sender['address']}>" if sender["name"] else sender["address"],
+                  "reply_to": parsed["reply_to"]["address"], "return_path": parsed["return_path"]["address"],
+                  "to": [mask_addresses(a) for a in parsed["to"]], "subject": parsed["subject"],
+                  "date": parsed["date"], "sending_ip": parsed["sending_ip"] or "not found"},
+        "checks": checks, "flags": result["rows"], "not_run": result["not_run"], "text": result["report"],
+    }
 
 
 def build_report_text(result, config=None, try_ai=True):

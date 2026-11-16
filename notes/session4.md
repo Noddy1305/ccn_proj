@@ -168,7 +168,7 @@ In the PhishGuard-AI flow, M5 runs at the same time as the sender and link check
 
 **Analogy.** A reception desk in a big office. Visitors (our other modules) always go to the same desk and ask the same way. The desk decides which department (Nemotron, Ollama, or nobody) handles it. If the department is closed, the desk says so politely instead of letting the visitor wander in and crash into things.
 
-**What happens.** Both M5 and M7 call one function with a system prompt, a user prompt and a token limit. The function reads `config.yaml` to see which provider is chosen (`nemotron`, `ollama` or `off`), builds the request, sends it, and gets the text back. It tidies the text (AI models sometimes wrap JSON in extra words or code fences) and returns clean data. Anything that goes wrong (no key, no internet, a slow reply, an empty answer, broken JSON) becomes **one kind of error** that the callers know how to handle.
+**What happens.** Both M5 and M7 call one function with a system prompt, a user prompt and a token limit. The function reads `config.yaml` to see which provider is chosen (`nemotron`, `ollama` or `off`), builds the request, sends it, and gets the text back. It tidies the text (AI models sometimes wrap JSON in extra words or code fences) and returns clean data. Anything that goes wrong (no key, no internet, a slow reply, an empty answer, broken JSON) becomes **one kind of error** that the callers know how to handle. If the answer is empty or broken JSON, the function **asks once more**, because that is often a one-off. It never retries when the internet itself is down, so the user does not wait twice as long.
 
 **Why it matters.** Switching from the cloud AI to the offline AI is a one-word change in the config. No other code changes. And the rest of the tool never has to worry about AI failures, because they all arrive in the same shape.
 
@@ -250,6 +250,12 @@ Take a phishing email with subject "Urgent: verify now" and a body saying "your 
 - `phishguard/pipeline.py`: runs the tone check beside the other two, then builds the report after scoring.
 - `phishguard/templates/dashboard.html` and `app.py`: show the "Tone (AI)" card and the "Plain-English report" block.
 - `phishguard/tests/`: `test_llm_client.py`, `test_tone.py`, `test_report.py` and `test_pipeline_ai.py` cover this part. `conftest.py` has the fake AI and the safety net.
+
+**Small fixes found by looking at the live page** (not new features):
+- **Table layout.** Words were splitting in the middle ("Ch ec k"). The tables now have fixed column widths and normal word wrapping.
+- **SPF evidence.** When the DNS lookup timed out, the page printed a long technical error. It now says "the DNS lookup timed out or failed" and still uses the mail server's own result.
+- **DMARC wording.** "DKIM none for -" is now "no DKIM found", because a missing signature is not the same as a failed one.
+- **Body text.** The HTML-to-text step split sentences at every bold or link tag. Only paragraphs and line breaks start a new line now.
 
 ## 6. Viva questions
 
