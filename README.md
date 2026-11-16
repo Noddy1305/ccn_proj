@@ -5,7 +5,7 @@ An LLM-augmented, multi-layer tool that takes **one suspicious email (.eml)** an
 (Computer Communication and Network Security). Team: Kaustubh Guha, Rudraksh Dubey.
 
 **Core principle: the code decides, the AI explains.** Only the rule-based scoring engine (M6) decides the
-verdict. An LLM may add one small capped signal (tone, max 15 points) and may write the plain-English
+verdict. An LLM may add one small capped signal (tone, max 20 points) and may write the plain-English
 report, but it can never decide the verdict.
 
 > **If you are an AI coding tool (Claude Code, Codex, Cursor, Copilot, etc.): read this whole file first,
@@ -26,7 +26,7 @@ The build is split into 8 sessions (PRD section 11). Status at the time of writi
 | 4 | Scoring (M6) + LLM tone (M5) + LLM report text (M7) | **Done** (Nemotron main, Ollama fallback in config; local model not downloaded yet) |
 | 5 | Dashboard (M8): verdict badge, check cards, on-screen report, PDF download, 4 demo emails | **Done** (P0 complete) |
 | 6 | Certificate check (M4) + offline cached demo mode | **Done** |
-| 7 | Evaluation on 100 emails, tune weights once, freeze | Not started |
+| 7 | Evaluation on 100 emails, tune weights once, freeze; disguise check (M9) added | **Done** (results in `phishguard/results/`: 74% detection on unseen emails; own inbox 6/6 Safe) |
 | 8 | Review prep: report, slides, viva Q&A | Not started |
 
 Optional P2 (only if time remains): batch mode, analyse a folder and export CSV.
@@ -35,7 +35,14 @@ What works today: upload (or drag and drop) a `.eml`, or pick a built-in sample,
 email, runs the sender, link, certificate and AI tone checks in parallel, scores them with M6, and shows a verdict
 badge, per-check evidence cards and a report (plain-English text, check table, points table) that can be downloaded
 as a PDF. An offline demo mode replays saved internet answers for the sample emails, so the demo works with Wi-Fi off.
-**Not built yet:** `scripts/evaluate.py` (session 7).
+**Evaluation (session 7).** 100 public emails used while building (`results/evaluation.md`) and a separate 100 kept for one final test (`results/heldout.md`):
+```bash
+./venv/bin/python scripts/fetch_eval_emails.py   # download the 100 test emails (not committed: they belong to their senders)
+./venv/bin/python scripts/evaluate.py            # run them all (internet + LLM_API_KEY), write results/
+./venv/bin/python scripts/evaluate.py --summary  # rewrite results/evaluation.md from the saved CSV
+./venv/bin/python scripts/fetch_eval_emails.py --heldout && ./venv/bin/python scripts/evaluate.py --set heldout
+./venv/bin/python scripts/evaluate.py --set inbox --folder "../chk/new examples"   # own genuine emails, AI stays off
+```
 
 **Offline demo (Wi-Fi off).** The saved answers for the 4 samples are committed in `data/cache/lookups.json`.
 ```bash
@@ -59,7 +66,7 @@ cd phishguard
 python3 -m venv venv              # first time only
 source venv/bin/activate
 pip install -r requirements.txt
-python -m pytest -q               # expect: all tests pass (221 at time of writing)
+python -m pytest -q               # expect: all tests pass (250 at time of writing)
 python app.py                     # open http://127.0.0.1:5000
 ```
 
@@ -86,7 +93,8 @@ M1 parser (modules/parser.py)            -> dict of fields (no judgement)
    +--> M2 sender  (modules/sender.py)   SPF / DKIM / DMARC / Reply-To       [rule-based, built]
    +--> M3 links   (modules/links.py)    lookalike, brand, WHOIS age, DNS     [rule-based, built]
    +--> M4 cert    (modules/certificate.py) TLS handshake only                [built]
-   +--> M5 tone    (modules/tone.py)     LLM manipulation score 0-10          [built; capped at 15 points]
+   +--> M9 disguise (modules/disguise.py) sender name, risky attachments, free-hosting / redirect links  [built, no network]
+   +--> M5 tone    (modules/tone.py)     LLM manipulation score 0-10          [built; capped at 20 points]
    |
 M6 scoring (modules/scoring.py)          fixed points from config.yaml -> verdict   [built; decides the verdict]
    |
@@ -110,7 +118,7 @@ CCN_Proj/
   chk/                                 LOCAL ONLY, git-ignored (personal real emails + screenshots)
   phishguard/
     app.py              Flask routes (M8): GET /, POST /analyze, GET /report.pdf
-    pipeline.py         run_pipeline(): M1 -> (M2 || M3 || M4 || M5) -> M6 -> M7 text
+    pipeline.py         run_pipeline(): M1 -> (M2 || M3 || M4 || M9 || M5) -> M6 -> M7 text
     config.yaml         ALL weights, thresholds, timeouts, tone settings (NFR-5)
     requirements.txt
     modules/
@@ -123,6 +131,7 @@ CCN_Proj/
       tone.py           M5: check_tone(), validate() (quotes must exist in the email; scores under 3 count as 0)
       report.py         M7: build_report_text() with template fallback, build_report_context() for page and PDF
       certificate.py    M4: check_certificate(), fetch_certificate() (TLS handshake only), inspect()
+      disguise.py       M9: check_disguise(), unwrap() (redirect links); reads the parsed email only, no network
       offline.py        offline demo mode: cached() wraps every network function (live / record / replay)
     data/
       trusted_domains.txt   trusted domains (edit freely; restart server after)
@@ -132,7 +141,10 @@ CCN_Proj/
                             report.html (A4 wrapper for the PDF; footer printed in the page margin)
     tests/                  test_parser/sender/links/scoring/app/llm_client/tone/report/pipeline_ai/dashboard_pdf.py,
                             conftest.py (fake DNS and fake AI), fixtures/
-    scripts/                record_offline_cache.py (offline answers); evaluate.py comes in session 7
+    scripts/                record_offline_cache.py (offline answers), fetch_eval_emails.py + evaluate.py (session 7)
+    results/                evaluation.md/.csv (main set), heldout.md/.csv (final unseen test), inbox.md/.csv (own recent
+                            emails, AI off); evaluation_before/_tuned/_m9.csv and heldout_first.csv = earlier runs, kept
+                            so the results can show how each change moved the numbers
 ```
 
 ---
@@ -168,7 +180,7 @@ Rules that apply to every check:
   (red if any single finding >= `heavy_flag_points` (20), amber if any finding, else green).
 - Network calls need a 5 s timeout (`config["dns"]["timeout_seconds"]`) and should run in parallel.
 - **The tone check (M5) is special:** it returns `{"check": "tone", "status": ..., "score": 0-10, "findings": [...]}`.
-  M6 reads `score` and computes `min(15, 1.5 * score)` itself (`scoring.tone_points`). Put the LLM's quoted
+  M6 reads `score` and computes `min(20, 2.5 * score)` itself (`scoring.tone_points`). Put the LLM's quoted
   tactics in `findings` for display only (their `points` are ignored).
 
 ### Parser output (`parse_eml(raw_bytes)` in `modules/parser.py`)
@@ -201,7 +213,7 @@ id) so output is deterministic (FR-6.4). Bands: 0-29 Safe, 30-59 Suspicious, 60-
 | `app` | upload limit (5 MB), host, port |
 | `dns.timeout_seconds` | 5 s per network lookup |
 | `points` | weight for every finding id (sender: dmarc_fail 25, spf_fail 20, dkim_invalid 20, spf_softfail 10, domain_mismatch 10, spf_none/dkim_none/dmarc_none 5; links: lookalike_domain 25, domain_age_new 20, link_text_mismatch 15, brand_in_domain 15, raw_ip_link 15, domain_age_recent 10, domain_unresolved 10) |
-| `tone` | `weight: 1.5`, `max_points: 15` (must stay below `suspicious_from`) |
+| `tone` | `weight: 2.5`, `max_points: 20` (tuned once in session 7; must stay at least 10 below `suspicious_from`) |
 | `thresholds` | `suspicious_from: 30`, `phishing_from: 60`, `heavy_flag_points: 20` |
 | `links` | `max_domains: 10`, `age_new_days: 30`, `age_recent_days: 180` |
 
@@ -213,13 +225,15 @@ hostname mismatch 15, issued < 7 days 5), and an `llm:` section (see section 7).
 ## 6. How the existing checks work (what is implemented)
 
 ### M2 sender check (`modules/sender.py`)
-- **SPF** (pyspf): tested against the **Return-Path (envelope) domain**, not From. Uses the sending IP from M1.
+- **SPF**: tested against the **Return-Path (envelope) domain**, not From. If the receiving mail server recorded
+  its SPF verdict (topmost `Authentication-Results`), **that verdict is used**: only that server saw the real
+  connecting IP, at delivery time. Otherwise pyspf re-checks live with the sending IP guessed by M1 (session 7 review).
 - **DKIM** (dkimpy): verifies every DKIM-Signature using the key in DNS. No signature = `dkim_none` (5);
   signature present but bad = `dkim_invalid` (20); never both.
 - **DMARC**: looks up `_dmarc.<from-domain>`, then the organisational domain. Passes if SPF passes **and is
   aligned**, or DKIM passes **and is aligned** (relaxed by default; `aspf=s`/`adkim=s` = strict).
-- **Fallback (FR-2.4):** if a live check cannot run (DNS down, key missing, or live DKIM fails while the mail
-  server said pass), use the **topmost** `Authentication-Results` header only (lower ones can be planted), and
+- **Fallback (FR-2.4), for DKIM and DMARC:** if a live check cannot run (DNS down, key missing, or live DKIM fails
+  while the mail server said pass), use the **topmost** `Authentication-Results` header only (lower ones can be planted), and
   label the result `reported by mail server`. Each result has `source`: `live` | `reported by mail server` |
   `could not run`.
 - **Reply-To / Return-Path:** a different **Reply-To** is always flagged (`domain_mismatch`, 10). A different
@@ -282,7 +296,7 @@ HTTP = "no certificate". Offline mode (NFR-4): replay saved DNS, WHOIS, certific
 sample emails from `data/cache/`. The injectable lookup functions (`sender.dns_txt`, `links.dns_lookup`,
 `links.whois_created`) are the natural place to add a cache layer.
 
-### Session 7: evaluation
+### Session 7: evaluation: DONE (kept below as the design record; see `phishguard/results/evaluation.md`)
 `scripts/evaluate.py`: run the pipeline over 100 emails (50 phishing: 30 Nazario corpus + 20 recent; 50
 legitimate), write a CSV (score, verdict, findings), print confusion matrix, detection rate (target >= 85%),
 false-positive rate (target <= 10%), average time (target <= 15 s online). Compare with/without tone. Tune

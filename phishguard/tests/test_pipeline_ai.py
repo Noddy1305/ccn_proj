@@ -35,8 +35,8 @@ def test_tone_adds_points_but_never_changes_how_the_verdict_is_decided(ai):
     ai.answers = fake_ai(10)
     r = run_pipeline(raw("genuine_college.eml"))
     tone_rows = [x for x in r["rows"] if x["check"] == "tone"]
-    assert tone_rows and tone_rows[0]["points"] == 15
-    assert r["total"] == min(100, base["total"] + 15)
+    assert tone_rows and tone_rows[0]["points"] == 20
+    assert r["total"] == min(100, base["total"] + 20)
     assert r["report"]["source"] == "ai" and r["band"] in ("safe", "suspicious", "phishing")
 
 

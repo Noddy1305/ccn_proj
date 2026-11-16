@@ -74,6 +74,18 @@ def test_text_that_calls_a_phishing_email_safe_is_rejected(ai):
     assert build_report_text(result("safe", 3, rows=[]), CFG)["source"] == "ai"   # same words are fine for a safe verdict
 
 
+def test_contradiction_rule_only_fires_when_the_email_itself_is_called_safe():
+    from modules.report import contradicts_verdict
+    for text in ("This email is safe and looks fine.", "The email appears to be legitimate.", "The verdict is safe.",
+                 "The message looks completely genuine.", "Nothing is wrong. It is harmless."):
+        assert contradicts_verdict(text), text
+    for text in ("It lacks two standard security signatures that help prove it is legitimate.",       # real AI reports
+                 "There is no DKIM signature or DMARC record to prove the email is legitimate.",
+                 "This email is not safe.", "The verdict is suspicious.", "It is safe to delete this email.",
+                 "We cannot confirm the email is genuine.", "Check that the website is genuine before you log in."):
+        assert not contradicts_verdict(text), text
+
+
 def test_ai_error_message_is_kept_as_the_note(ai):
     ai.answers = lambda s, u: LLMError("The AI returned broken JSON.")
     assert build_report_text(result(), CFG)["note"] == "The AI returned broken JSON."

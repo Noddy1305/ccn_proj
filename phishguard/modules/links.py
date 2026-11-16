@@ -26,6 +26,7 @@ GENERIC_BRANDS = {"mail", "www", "web", "net", "online", "news", "one", "my", "g
                   # trusted names that are also ordinary words or too short to be safe brands
                   "live", "office", "meta", "zoom", "goo", "ola", "mit", "nic", "vit", "ugc", "uber", "youtu"}
 MIN_LOOKALIKE_NAME = 6      # shorter names (kodak/kotak, olx/ola) are too easy to confuse by accident
+LONG_LOOKALIKE_NAME = 7     # names this long may be 2 letters away; shorter ones only 1
 # Bare words like "srmist.edu.in" in link text only count as a domain if the ending is a real TLD.
 COMMON_TLDS = {"com", "org", "net", "edu", "gov", "in", "io", "co", "uk", "info", "biz", "app", "dev",
                "me", "us", "ai", "xyz", "online", "site", "top", "club", "shop", "store", "tech",
@@ -139,7 +140,7 @@ def lookalike_of(host, trusted):
 
     Tests the registered domain and also runs of 2+ labels hidden in the subdomain part
     (srmlst.edu.in.verify-login.com hides 'srmlst.edu.in'). Names shorter than 6 letters are skipped and
-    distance 2 is allowed only for long domains, to avoid false alarms on short real domains.
+    distance 2 is allowed only for names of 7+ letters, to avoid false alarms on short real domains.
     """
     if is_ip(host):
         return None
@@ -155,7 +156,9 @@ def lookalike_of(host, trusted):
         name_len = len(org_domain(cand).split(".")[0])    # the part before .com / .edu.in
         if name_len < MIN_LOOKALIKE_NAME or cand in trusted:
             continue
-        limit = 2 if len(cand) >= 10 else 1
+        # Two changes only for names of 7+ letters: in a 6-letter name two changes are a third of it, and real
+        # companies end up that close by chance (redhat.com / reddit.com, found in the session 7 evaluation).
+        limit = 2 if name_len >= LONG_LOOKALIKE_NAME else 1
         match = process.extractOne(cand, sorted(trusted), scorer=Levenshtein.distance, score_cutoff=limit)
         if match and match[1] >= 1 and (best is None or match[1] < best[2]):
             best = (cand, match[0], match[1])
@@ -293,7 +296,7 @@ def _check_links(parsed, config, now):
             elif info["age_days"] < lcfg["age_recent_days"]:
                 flag("domain_age_recent", f"{d} registered {info['age_days']} days ago", d)
         if info["resolves"] is False:                                      # FR-3.6
-            flag("domain_unresolved", f"{d} does not resolve in DNS", d)
+            flag("domain_unresolved", f"{hosts[d]} does not resolve in DNS", d)   # the exact name that was looked up
 
     titles = {
         "lookalike_domain": "Lookalike of a trusted domain",

@@ -197,7 +197,7 @@ def _check_certificate(parsed, config, now):
                         "evidence": "The email contains no http/https links"})
 
     points = config["points"]
-    findings = [{"id": fid, "title": TITLES[fid], "points": points.get(fid, 0), "evidence": "certificate of " + ", ".join(hosts)}
+    findings = [{"id": fid, "title": TITLES[fid], "points": points.get(fid, 0), "evidence": "certificate shown by the linked website " + ", ".join(hosts)}
                 for fid, hosts in found.items()]
     findings.sort(key=lambda f: -f["points"])
     status = status_for(findings, config)

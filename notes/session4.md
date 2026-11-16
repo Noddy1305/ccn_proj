@@ -16,7 +16,7 @@ In the PhishGuard-AI flow, M6 sits after all the checks. It is the **only** modu
 - **Score**: the total number of risk points for one email, from 0 to 100. Higher means riskier.
 - **Weight**: how many points one kind of red flag is worth (for example DMARC fail = 25).
 - **Contribution**: one red flag that actually added points to the score.
-- **Cap**: a ceiling. The score never goes above 100, and the AI's tone points never go above 15.
+- **Cap**: a ceiling. The score never goes above 100, and the AI's tone points never go above 20 (15 before session 7).
 - **Threshold / band**: the score limits that separate the verdicts: 0-29 Safe, 30-59 Suspicious, 60-100 Phishing.
 - **Verdict**: the final label (Safe, Suspicious or Phishing).
 - **Deterministic**: the same email always gives exactly the same score. No randomness.
@@ -57,11 +57,11 @@ In the PhishGuard-AI flow, M6 sits after all the checks. It is the **only** modu
 
 **Why it matters.** In session 7 we will tune the weights once, using the 100 test emails. Because M6 re-reads the config, we can change a number there and re-score everything without editing any code.
 
-### Feature E: the AI's tone score is capped at 15 (slot ready, M5 not built yet)
+### Feature E: the AI's tone score is capped at 20 (slot ready, M5 not built yet)
 
 **Analogy.** An expert witness in court may give an opinion, but the judge, not the witness, decides the case. The AI may raise a flag, but it can never decide.
 
-**What happens.** When the tone check exists it will give a manipulation score from 0 to 10. M6 turns it into points by multiplying by 1.5, never above 15. A score of 8 gives 12 points. A score of 10 gives 15.
+**What happens.** When the tone check exists it will give a manipulation score from 0 to 10. M6 turns it into points by multiplying by 2.5, never above 20. A score of 4 gives 10 points. A score of 8 or more gives 20. (It was 1.5 and 15 until the session 7 evaluation; see notes/session7.md.)
 
 **Why 15?** The Suspicious line is at 30. Even a perfect 10 only gives 15, which is **half** of what's needed. So an email can never be marked suspicious by the AI alone; it needs real technical red flags too. (Said another way: the AI's maximum is below the first warning line, so a wrong AI answer can't turn a safe email into a flagged one.)
 
@@ -75,18 +75,18 @@ The coloured **cards** judge **one check each**: red if any single flag there is
 
 Four emails through M6:
 
-1. **`forged_exam_cell.eml`.** Sender flags: DMARC fail 25, no SPF 5, no DKIM 5, mismatch 10 = 45. Link flags: lookalike 25, text mismatch 15, raw IP 15 = 55. Together 100, so the verdict is **Phishing**. The table lists them largest first, starting with the 25s.
-2. **`corpus_phish.eml`.** Sender: no SPF, DKIM, DMARC = 15. Links: domain does not resolve = 10. Total **25**, below 30, so **Safe** for now. The tone check, when built, would add up to 15 more.
+1. **`forged_exam_cell.eml`.** Sender flags: DMARC fail 25, SPF fail 20, no DKIM 5, mismatch 10 = 60. Link flags: lookalike 25, text mismatch 15, raw IP 15 = 55. Together 115, which is capped at 100, so the verdict is **Phishing**. The table lists them largest first, starting with the 25s.
+2. **`corpus_phish.eml`.** Sender: no SPF, DKIM, DMARC = 15. Links: domain does not resolve = 10. Total **25**, below 30, so **Safe** for now. The tone check, when built, would add up to 20 more.
 3. **Your real YouTube email.** No red flags at all, so the total is **0** and the verdict is **Safe**.
 4. **Made-up cases to show the rules.**
    - Flags worth 125 in total show as "125, capped at 100".
-   - A sender score of 25 plus tone of 3 gives 4.5 points, total 29.5, which rounds up to 30: **Suspicious**.
+   - A sender score of 20 plus a tone score of 3.8 gives 9.5 points, total 29.5, which rounds up to 30: **Suspicious**.
    - Tone 8 gives 12 points. Tone alone, even at 10, gives only 15: **Safe**.
 
 ## 5. Files
 
 - `phishguard/modules/scoring.py`: the whole M6. Point at `score_email()` for "show me where the score is calculated". `verdict_for()` maps the score to Safe, Suspicious or Phishing. `points_for()` looks a weight up in the config. `tone_points()` is the capped tone formula. `BANDS` holds the legend text for the page.
-- `phishguard/config.yaml`: now has the `tone:` section (weight 1.5, cap 15). The weights and the 30 and 60 limits were already there.
+- `phishguard/config.yaml`: now has the `tone:` section (weight 2.5, cap 20 since session 7; it started at 1.5 and 15). The weights and the 30 and 60 limits were already there.
 - `phishguard/pipeline.py`: after the checks finish, it calls `score_email()`. The earlier stand-in `rate()` function is gone.
 - `phishguard/templates/dashboard.html` and `app.py`: show "Total score", "Verdict", a "capped at 100" note when needed and a "could not run" line.
 - `phishguard/tests/test_scoring.py`: 18 tests covering adding, the cap, the thresholds, ordering, determinism, the config rules, the tone formula and the rounding rule.
@@ -99,11 +99,11 @@ Four emails through M6:
 2. **Why is the verdict decided by code and not by the LLM?**
    Code is predictable and explainable: the same email always gets the same score, and every point can be traced to a red flag. An LLM can make mistakes, so it is only allowed to add a small capped signal and to explain the result.
 
-3. **Why is the tone score capped at 15 points?**
-   The Suspicious line is 30. With a maximum of 15 the AI can never push an email into Suspicious alone, so a wrong AI answer can't wrongly flag a safe email. Real technical evidence is also needed.
+3. **Why is the tone score capped at 20 points?**
+   The Suspicious line is 30. With a maximum of 20 the AI can never push an email into Suspicious alone (at least 10 points must come from the other checks), so a wrong AI answer can't wrongly flag a safe email. Real technical evidence is also needed.
 
 4. **How is the tone score turned into points?**
-   Points are 1.5 times the manipulation score (0 to 10), up to a maximum of 15. For example a score of 8 gives 12 points.
+   Points are 2.5 times the manipulation score (0 to 10), up to a maximum of 20. For example a score of 4 gives 10 points. We set 2.5 and 20 in session 7, after testing on 100 emails.
 
 5. **What does "deterministic" mean here, and how do you guarantee it?**
    The same input always gives the same score and order. There is no randomness, and ties between equal flags are sorted by a fixed rule (check order, then name).
@@ -194,7 +194,7 @@ In the PhishGuard-AI flow, M5 runs at the same time as the sender and link check
 
 ### Feature D: from tone score to points
 
-The tone score times 1.5, never above 15 points, is added by M6 (see Part 1). Since 15 is below the Suspicious line of 30, the AI alone can never flag an email. The tone card on the page can only be amber, never red, because 15 is less than the 20-point "red" limit.
+The tone score times 2.5, never above 20 points, is added by M6 (see Part 1). Since 20 is below the Suspicious line of 30, the AI alone can never flag an email. The tone card on the page can only be amber, never red: the AI is supporting evidence, never the strongest warning. (It was 1.5 and 15 until the session 7 evaluation; see notes/session7.md.)
 
 **One addition, the "tone floor".** In our first live test, a plain timetable email from the college got a tone score of 1 out of 10. AI models often give ordinary emails a 1 or 2, like a teacher who never gives anyone exactly zero. That small score made the card amber and the report said the email was "slightly manipulative", which is wrong. So `config.yaml` has `min_score: 3`. A score below 3 is treated as background noise and counts as **0**: no points, a green card, no quoted tactics. The page still shows the raw score, marked "too low to count", so nothing is hidden. A score of 3 or more counts normally (3 gives 4.5 points).
 
@@ -234,9 +234,9 @@ Take a phishing email with subject "Urgent: verify now" and a body saying "your 
 2. **Three checks run side by side.** The sender check finds DMARC failed (+25). The link check finds a lookalike domain (+25). The tone check starts.
 3. **Tone, sending.** The text goes to Nemotron with addresses masked and the email fenced between markers.
 4. **Tone, answer.** The AI replies with a score of 8 and two tactics: urgency ("closed within 24 hours") and asking for login details ("enter your password").
-5. **Tone, checking.** Our code confirms both quotes appear in the email, so both are kept. The tone gives 1.5 x 8 = **12 points**. Had the AI also claimed a "threat" with a quote that is not in the email, that one would be thrown away.
-6. **Scoring (M6).** 25 + 25 + 12 = **62**, so the verdict is **Phishing**. This was decided by code.
-7. **Report (M7).** The AI receives "phishing, 62, and three flags (DMARC failed, lookalike domain, manipulative wording)". It writes three short paragraphs. Our code checks all three exist, the length is sensible, and the text does not call the email safe.
+5. **Tone, checking.** Our code confirms both quotes appear in the email, so both are kept. The tone gives 2.5 x 8 = **20 points**. Had the AI also claimed a "threat" with a quote that is not in the email, that one would be thrown away.
+6. **Scoring (M6).** 25 + 25 + 20 = **70**, so the verdict is **Phishing**. This was decided by code.
+7. **Report (M7).** The AI receives "phishing, 70, and three flags (DMARC failed, lookalike domain, manipulative wording)". It writes three short paragraphs. Our code checks all three exist, the length is sensible, and the text does not call the email safe.
 8. **Page.** It shows the verdict, the points table, a "Tone (AI)" card with the quotes, and the "Plain-English report" with the note "the verdict is rule-based, the explanation was written by an AI".
 
 **If the Wi-Fi is off:** step 3 fails at once, the tone card shows "could not run" and adds 0 points, the score is 50, the report is built from the template, and the page says so. The verdict still appears.
@@ -266,7 +266,7 @@ Take a phishing email with subject "Urgent: verify now" and a body saying "your 
    Those checks inspect the technical side. A careful attacker can pass them and still write a pressuring message. Only reading the wording can catch urgency, threats or requests for passwords.
 
 3. **How do you stop the AI from deciding the verdict or causing a false alarm?**
-   Its tone score is turned into at most 15 points, and the Suspicious line is 30, so it can never flag an email alone. The report AI only receives the finished verdict and explains it. If its text contradicts the verdict, we discard it.
+   Its tone score is turned into at most 20 points, and the Suspicious line is 30, so it can never flag an email alone. The report AI only receives the finished verdict and explains it. If its text contradicts the verdict, we discard it.
 
 4. **What if the AI makes up a quote that is not in the email?**
    We check every quote against the text we sent, ignoring capitals and line breaks. A quote that is not found is dropped. If no quote survives, the tone score becomes 0. So an invented answer cannot add points.
@@ -295,7 +295,7 @@ Take a phishing email with subject "Urgent: verify now" and a body saying "your 
 ## 7. Remember this
 
 - **Code decides, AI explains.** The AI never picks the verdict.
-- The AI's tone score is capped at **15 points**, under the **30** Suspicious line.
+- The AI's tone score is capped at **20 points**, under the **30** Suspicious line.
 - Every quote the AI gives is **checked against the email**. Invented quotes are thrown away.
 - If the AI fails, the **tone check adds 0** and the **report comes from a template**. The tool never breaks.
 - The key lives in the **`LLM_API_KEY` environment variable**, and email addresses are **masked** before anything goes to the cloud.

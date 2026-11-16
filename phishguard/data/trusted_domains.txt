@@ -116,4 +116,5 @@ harvard.edu
 
 # --- Other domains owned by the brands above (so their own links are not flagged) ---
 hubspot.net
+hubspotlinks.com
 paypal.me

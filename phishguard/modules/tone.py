@@ -3,12 +3,12 @@
 The other checks look at headers and links. This one reads the WORDS, looking for the
 pressure tricks phishers use. The AI gives a manipulation score (0-10) and quotes the
 phrases it based it on. Our code then checks every quote really exists in the email
-(an AI can invent things), and M6 turns the score into at most 15 points. The AI can
+(an AI can invent things), and M6 turns the score into at most 20 points. The AI can
 never flag an email on its own (PRD section 6).
 """
 import re
 
-from modules import llm_client, load_config, status_for
+from modules import llm_client, load_config
 from modules.llm_client import LLMError, mask_addresses
 
 TACTICS = {
@@ -93,5 +93,6 @@ def check_tone(parsed, config=None):
         points = round(min(cfg["max_points"], cfg["weight"] * score), 1)
         evidence = "; ".join(f"{TACTICS[t['tactic']].lower()}: “{t['quote']}”" for t in tactics)
         findings.append({"id": "tone_manipulation", "title": "Manipulative wording (AI)", "points": points, "evidence": evidence})
-    return {"check": "tone", "status": status_for(findings, config), "score": score,
+    # The tone card is amber at most, never red: the AI is supporting evidence, never the strongest warning.
+    return {"check": "tone", "status": "warn" if findings else "pass", "score": score,
             "findings": findings, "details": details, "error": ""}

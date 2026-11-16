@@ -31,12 +31,22 @@ points:
   cert_expired: 15
   cert_hostname_mismatch: 15  # certificate is for a different website name
   cert_new: 5               # issued in the last 7 days
+  # Disguise check (M9, session 7 part 2). Set by comparison with similar flags BEFORE the held-out test, not tuned.
+  risky_attachment: 20      # web page / program / script attachment: as strong as spf_fail
+  brand_display_name: 15    # sender name shows a brand the domain does not belong to: like brand_in_domain
+  address_in_display_name: 15  # sender name shows a different address: like link_text_mismatch
+  own_org_display_name: 15  # sender name shows the reader's own organisation, sent from outside
+  free_hosting_link: 10     # link to a free web host: suspicious, but real sites use them too (like domain_age_recent)
+  redirect_link: 10         # link hidden behind google.com/url?q= or an ad-click redirect
 
 # Tone check (M5): points = weight x manipulation score (0-10), capped.
 # The cap must stay below suspicious_from so the AI can never flag an email on its own.
+# Tuned once in session 7 (was 1.5 and 15): on the evaluation's tuning half, recent phishing with a high tone
+# score stopped at 20-29 points, just under Suspicious. The cap stays at 20, so an email still needs at least
+# 10 points from the non-AI checks to reach Suspicious. These two numbers are frozen after session 7.
 tone:
-  weight: 1.5
-  max_points: 15
+  weight: 2.5
+  max_points: 20
   min_score: 3              # scores below this are background noise (ordinary mail often gets 1-2) and count as 0
 
 # Verdict bands (PRD section 6). Score 0-100.

@@ -13,14 +13,14 @@ def says(score, *tactics):
 
 
 def test_good_answer_becomes_score_finding_and_points(ai):
-    ai.answers = says(8, ("urgency", "closed within 24 hours"), ("credential_request", "enter your password"))
+    ai.answers = says(6, ("urgency", "closed within 24 hours"), ("credential_request", "enter your password"))
     c = check_tone(PARSED, CFG)
-    assert c["status"] == "warn" and c["score"] == 8
-    assert c["findings"][0]["points"] == 12                       # 1.5 x 8
+    assert c["status"] == "warn" and c["score"] == 6
+    assert c["findings"][0]["points"] == 15                       # 2.5 x 6
     assert "closed within 24 hours" in c["findings"][0]["evidence"]
     assert [d["name"] for d in c["details"]] == ["Manipulation score", "Urgency", "Asks for login details"]
     r = score_email([c], CFG)
-    assert r["score"] == 12 and r["contributions"][0]["id"] == "tone_manipulation"
+    assert r["score"] == 15 and r["contributions"][0]["id"] == "tone_manipulation"
 
 
 def test_invented_quote_is_dropped_and_unsupported_score_counts_for_nothing(ai):
@@ -36,7 +36,7 @@ def test_low_scores_are_background_noise_and_count_as_zero(ai):
     assert c["details"][0]["result"] == "2 / 10 (too low to count)" and len(c["details"]) == 1   # raw score still shown
     assert score_email([c], CFG)["score"] == 0
     ai.answers = says(3, ("urgency", "24 hours"))                 # 3 is the first score that counts
-    assert check_tone(PARSED, CFG)["findings"][0]["points"] == 4.5
+    assert check_tone(PARSED, CFG)["findings"][0]["points"] == 7.5
 
 
 def test_quote_match_ignores_case_and_line_breaks(ai):
@@ -53,10 +53,10 @@ def test_unknown_tactic_names_and_repeats_are_ignored(ai):
 def test_score_is_clamped_and_points_are_capped_below_suspicious(ai):
     ai.answers = says(99, ("urgency", "24 hours"))
     c = check_tone(PARSED, CFG)
-    assert c["score"] == 10 and c["findings"][0]["points"] == 15
-    assert c["status"] == "warn"                                  # 15 < heavy_flag_points, so never red
+    assert c["score"] == 10 and c["findings"][0]["points"] == 20
+    assert c["status"] == "warn"                                  # the tone card is never red, even at the cap
     r = score_email([c], CFG)
-    assert r["score"] == 15 and r["verdict"] == "safe"            # the AI alone can never flag an email
+    assert r["score"] == 20 and r["verdict"] == "safe"            # the AI alone can never flag an email
 
 
 def test_unusable_score_makes_the_check_error_not_the_pipeline(ai):

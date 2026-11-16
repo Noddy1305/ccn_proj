@@ -35,7 +35,9 @@ In the PhishGuard-AI flow, M2 runs right after the parser (M1) and uses the head
 
 **Analogy.** A company posts a list at the front desk: "Only these delivery vans may collect parcels in our name." When a van arrives, the guard checks its number plate against the list.
 
-**What happens.** We take the sending IP found by the parser (the van's number plate) and the Return-Path domain (the company name on the paperwork). We fetch that domain's SPF record from DNS and test whether the IP is allowed. The result is pass, fail, softfail or none. If the domain has no SPF at all, we note "none".
+**What happens.** SPF compares the sending server's IP (the van's number plate) with the list published by the Return-Path domain (the company name on the paperwork). The result is pass, fail, softfail or none.
+
+There is a catch: only the **receiving mail server** (for example Gmail) actually saw the van. It checks SPF at the door and writes its verdict into the Authentication-Results header. So if that header has an SPF verdict, **we use it**. Only when an email has no such verdict do we redo the check ourselves, using the IP the parser found in the Received headers and today's DNS. (This order was fixed in the session 7 review: our own re-check sometimes picked the wrong computer when an email had passed through a relay, and said "SPF failed" for emails that had really passed.)
 
 **Why it matters.** A scammer's server is not on the real college's list, so SPF fails. One catch: SPF checks the **Return-Path** domain, not the From line. A scammer can use their own domain there and pass SPF, which is why DMARC (below) exists.
 
@@ -59,7 +61,7 @@ In the PhishGuard-AI flow, M2 runs right after the parser (M1) and uses the head
 
 **Analogy.** If the phone line to the registry is down, you can read the note the front-desk guard wrote when the parcel arrived: "van checked, OK".
 
-**What happens.** If a live check cannot run (no internet, DNS timeout, key missing), or if DKIM fails live but the receiving server said `dkim=pass` (for example, forwarding changed the message and broke the signature), we use the receiving server's **Authentication-Results** header instead. Every result is labelled with its source: *live*, *reported by mail server*, or *could not run*. We read **only the topmost** Authentication-Results header, because lower ones could have been planted by the sender.
+**What happens.** For SPF the receiving server's verdict always comes first (see Feature A). For DKIM and DMARC we check live first. If a live check cannot run (no internet, DNS timeout, key missing), or if DKIM fails live but the receiving server said `dkim=pass` (for example, forwarding changed the message and broke the signature), we use the receiving server's **Authentication-Results** header instead. Every result is labelled with its source: *live*, *reported by mail server*, or *could not run*. We read **only the topmost** Authentication-Results header, because lower ones could have been planted by the sender.
 
 **Why it matters.** It stops real forwarded emails looking forged and keeps the tool working when Wi-Fi fails. If nothing can be verified, the check is shown as "could not run" with 0 points. It never crashes.
 
@@ -90,7 +92,7 @@ Each finding gets its points from `config.yaml` (for example `dmarc_fail: 25`), 
 
 The band limits (30 and 60) are read from `config.yaml`. The rating was **provisional** at this point because only the sender check existed; later checks add more points. This now lives in the real scoring engine (M6, `modules/scoring.py`, built in session 4).
 
-**Card colour vs rating.** These are two different things. The coloured **card** judges *one check* (the sender check): red means a serious sender problem was found. The **rating** judges the *total points*. The forged sample shows a red sender card but only "Suspicious" overall, because 45 points is below 60. Links and tone will push it higher.
+**Card colour vs rating.** These are two different things. The coloured **card** judges *one check* (the sender check): red means a serious sender problem was found. The **rating** judges the *total points*. For example, an email whose only red flag is a failed SPF check (+20) shows a red sender card, but its total of 20 is still rated Safe.
 
 **Why it matters.** The user sees *why* an email got its rating, not just a label, and an examiner can check every point.
 
@@ -98,12 +100,12 @@ The band limits (30 and 60) are read from `config.yaml`. The rating was **provis
 
 We follow `forged_exam_cell.eml`. The real domain `srmist.edu.in` publishes SPF ending in `~all` and a DMARC record with `p=none` (checked on 29 Oct 2026). The email's Return-Path is `bounce@srmlst-verify.com`, and the sending IP is `185.234.72.19`.
 
-1. **SPF.** We look up the SPF record of `srmlst-verify.com` (the Return-Path domain). The domain publishes none, so result = **none**. Finding: *No SPF record*, +5.
+1. **SPF.** The email's Authentication-Results header says `spf=fail` for `srmlst-verify.com` (the Return-Path domain): the receiving server saw a computer that was not on that domain's list. We use that verdict. Finding: *SPF failed*, +20.
 2. **DKIM.** The email has no DKIM-Signature, so result = **none**. Finding: *No DKIM signature*, +5. (Never both "none" and "invalid".)
 3. **DMARC.** We fetch `_dmarc.srmist.edu.in`, which says `p=none`. SPF did not pass and DKIM did not pass, so nothing lines up with the From domain. Result = **fail**. Finding: *DMARC failed*, +25. The policy `none` only tells receivers not to block; we still count the failure as a red flag.
 4. **Mismatch.** Reply-To and Return-Path are on `srmlst-verify.com` but From says `srmist.edu.in`. Finding: *Reply-To / Return-Path differs from From*, +10.
-5. **Header ignored.** The email contains an Authentication-Results header, but all live checks worked, so it is not used.
-6. **Output.** The sender card is red (**fail**). Points = 5 + 5 + 25 + 10 = **45**, so the provisional rating is **Suspicious** (30-59), not Phishing. The links (a lookalike domain and a raw IP) and the urgent tone will add more points in sessions 3 and 4, which should lift it to Phishing.
+5. **Header.** The Authentication-Results header gave us the SPF verdict. Its DKIM and DMARC lines were not needed, because those two live checks worked.
+6. **Output.** The sender card is red (**fail**). Points = 20 + 5 + 25 + 10 = **60** from the sender check alone, which is exactly where the **Phishing** band starts (60-100). The links (a lookalike domain and a raw IP) and the urgent tone add more points in sessions 3 and 4; the finished tool gives this email 100.
 
 A real email, tested live: a YouTube Premium reminder (From `youtube.com`). SPF **passes** for `scoutcamp.bounces.google.com`, but that is Google's domain, so it is **not aligned** with `youtube.com`. DKIM **passes** and **is aligned** (signed by `youtube.com`), so DMARC passes (policy `reject`). The Return-Path is on Google's domain, but because DMARC passed it costs **0 points**. Total **0**, rating **Safe**, green. This shows why DMARC needs only one aligned pass (SPF or DKIM).
 
@@ -127,7 +129,7 @@ For contrast, `genuine_college.eml` is sent from a Google server (209.85.220.41)
    It checks whether the email really came from the domain it claims, using SPF, DKIM and DMARC. The From line is only text, so these DNS-based checks give actual evidence.
 
 2. **What is SPF and which address does it check?**
-   SPF is a DNS record listing the servers allowed to send mail for a domain. We test the sending IP against the SPF record of the Return-Path (envelope) domain, not the From address.
+   SPF is a DNS record listing the servers allowed to send mail for a domain. It is tested against the Return-Path (envelope) domain, not the From address. We use the receiving server's SPF verdict when the email carries one, because only that server saw the real sending computer; otherwise we re-check it ourselves.
 
 3. **What is DKIM and why does it need DNS?**
    DKIM is a digital signature added by the sending server. The matching public key is published in DNS, so anyone can verify that the message came from that domain and was not changed.
@@ -147,8 +149,8 @@ For contrast, `genuine_college.eml` is sent from a Google server (209.85.220.41)
 8. **Why do you read only the topmost Authentication-Results header?**
    The receiving server adds its header on top. Headers lower down could have been written by the sender to fake a pass, so we ignore them.
 
-9. **The forged email has a red sender card but only a "Suspicious" rating. Why?**
-    The card judges only the sender check; the rating judges the total points. The sender check alone gave 45, which is in the Suspicious band (30-59). Links and tone will add more points later.
+9. **Can a check card be red while the overall rating is still Safe or Suspicious?**
+    Yes. The card judges only one check: it turns red when any single red flag is worth 20 points or more. The rating judges the total points. An email whose only problem is a failed SPF check (+20) has a red sender card but a total of 20, which is still Safe.
 
 10. **Why isn't YouTube's different Return-Path (a Google domain) a red flag?**
     Because DMARC passed: the email was signed by youtube.com itself, so Google is just an authorised sending service. We only penalise a different Return-Path when DMARC does not pass. A different Reply-To is always penalised.

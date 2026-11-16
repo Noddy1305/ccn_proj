@@ -104,18 +104,20 @@ def test_thresholds_come_from_config():
     assert score_email([check("sender", finding("spf_fail"))], cfg)["verdict"] == "phishing"
 
 
-# ---------- tone (M5 plugs in later): 1.5 x s, max 15, can never convict alone
+# ---------- tone (M5): 2.5 x s, max 20 (tuned in session 7), can never convict alone
 
 def test_tone_points_formula_and_cap():
-    assert score_email([check("tone", score=4)], CFG)["score"] == 6
-    assert score_email([check("tone", score=10)], CFG)["score"] == 15
+    assert score_email([check("tone", score=4)], CFG)["score"] == 10
+    assert score_email([check("tone", score=10)], CFG)["score"] == 20
     assert score_email([check("tone", score=10)], CFG)["contributions"][0]["id"] == "tone_manipulation"
 
 
 def test_tone_alone_can_never_reach_suspicious():
     r = score_email([check("tone", score=10)], CFG)
-    assert r["score"] == 15 and r["verdict"] == "safe"
+    assert r["score"] == 20 and r["verdict"] == "safe"
     assert CFG["tone"]["max_points"] < CFG["thresholds"]["suspicious_from"]
+    # at least 10 points of non-AI evidence are always needed: one small "none" flag (5) is not enough
+    assert CFG["tone"]["max_points"] + 5 < CFG["thresholds"]["suspicious_from"]
 
 
 def test_tone_error_or_missing_score_adds_nothing():
@@ -125,17 +127,16 @@ def test_tone_error_or_missing_score_adds_nothing():
 
 def test_tone_adds_to_other_checks():
     r = score_email([check("sender", finding("dmarc_fail")), check("tone", score=8)], CFG)
-    assert r["score"] == 25 + 12 and r["verdict"] == "suspicious"
+    assert r["score"] == 25 + 20 and r["verdict"] == "suspicious"
 
 
 # ---------- rounding and capped display
 
 def test_halves_round_up_at_the_verdict_line():
-    # 25 (dmarc_fail) + tone 3 x 1.5 = 4.5 -> 29.5 must become 30 (Suspicious), 28.5 -> 29 (Safe)
-    assert score_email([check("sender", finding("dmarc_fail")), check("tone", score=3)], CFG)["score"] == 30
-    r = score_email([check("sender", finding("dmarc_fail")), check("tone", score=3)], CFG)
-    assert r["raw_total"] == 29.5 and r["verdict"] == "suspicious"
-    r2 = score_email([check("sender", finding("spf_fail")), check("tone", score=5.67)], CFG)   # 20 + 8.5 = 28.5
+    # 20 (spf_fail) + tone 3.8 x 2.5 = 9.5 -> 29.5 must become 30 (Suspicious); 20 + 3.4 x 2.5 = 28.5 -> 29 (Safe)
+    r = score_email([check("sender", finding("spf_fail")), check("tone", score=3.8)], CFG)
+    assert r["raw_total"] == 29.5 and r["score"] == 30 and r["verdict"] == "suspicious"
+    r2 = score_email([check("sender", finding("spf_fail")), check("tone", score=3.4)], CFG)
     assert r2["raw_total"] == 28.5 and r2["score"] == 29 and r2["verdict"] == "safe"
 
 

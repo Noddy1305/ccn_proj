@@ -101,11 +101,38 @@ def test_spf_pass_for_attacker_domain_still_fails_dmarc_alignment(zone):
 
 def test_spf_dns_timeout_is_explained_in_one_short_line(zone):
     zone.broken = True
-    r = run(make_eml(auth="spf=fail smtp.mailfrom=srmist.edu.in; dkim=none; dmarc=fail (p=REJECT) header.from=srmist.edu.in"))
-    spf_detail = detail(r, "SPF")
-    assert spf_detail["result"] == "fail" and spf_detail["source"] == "reported by mail server"
-    assert "the DNS lookup timed out or failed" in spf_detail["evidence"] and "mail server reported spf=fail" in spf_detail["evidence"]
+    spf_detail = detail(run(make_eml()), "SPF")
+    assert spf_detail["result"] == "error" and spf_detail["source"] == "could not run"
+    assert "the DNS lookup timed out or failed" in spf_detail["evidence"]
     assert "Do53" not in spf_detail["evidence"] and "resolution lifetime" not in spf_detail["evidence"]
+
+
+# ---------- SPF: the receiving server's verdict comes first (it saw the real connecting computer)
+
+def test_mail_server_spf_pass_beats_our_guess_when_the_email_went_through_a_relay(zone):
+    # Our re-check would use 52.1.2.3 (the first hop we can see), which the domain does not list: a false "fail".
+    zone.add_txt("srmist.edu.in", "v=spf1 ip4:203.0.113.9 -all")
+    zone.add_txt("_dmarc.srmist.edu.in", "v=DMARC1; p=reject")
+    r = run(make_eml(auth='spf=pass (domain designates 203.0.113.9 as permitted sender) smtp.mailfrom="bounce@srmist.edu.in"'))
+    d = detail(r, "SPF")
+    assert d["result"] == "pass" and d["source"] == "reported by mail server" and "mx.local" in d["evidence"]
+    assert "spf_fail" not in ids(r) and detail(r, "DMARC")["result"] == "pass"     # quoted mailfrom still aligns
+
+
+def test_mail_server_spf_fail_beats_a_live_pass(zone):
+    zone.add_txt("srmist.edu.in", "v=spf1 ip4:52.1.2.3 -all")       # today's DNS would say pass
+    r = run(make_eml(auth="spf=fail smtp.mailfrom=srmist.edu.in"))
+    assert detail(r, "SPF")["result"] == "fail" and "spf_fail" in ids(r)
+
+
+def test_mail_server_spf_error_is_not_a_verdict_so_we_check_live(zone):
+    zone.add_txt("srmist.edu.in", "v=spf1 ip4:52.1.2.3 -all")
+    d = detail(run(make_eml(auth="spf=temperror smtp.mailfrom=srmist.edu.in")), "SPF")
+    assert d["result"] == "pass" and d["source"] == "live"
+    zone.broken = True                                              # neither could check: no points, and it says so
+    r = run(make_eml(auth="spf=temperror smtp.mailfrom=srmist.edu.in"))
+    assert detail(r, "SPF")["result"] == "error" and "spf=temperror" in detail(r, "SPF")["evidence"]
+    assert "spf_fail" not in ids(r) and "dmarc_fail" not in ids(r)
 
 
 # ---------- DMARC

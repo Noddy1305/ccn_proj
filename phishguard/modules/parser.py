@@ -169,4 +169,5 @@ def parse_eml(raw):
         "body_source": body_source,
         "links": _extract_links(html, plain if body_source == "plain" else ""),
         "attachments": attachments,
+        "list_id": str(msg.get("List-Id", "")),      # set by mailing lists; the disguise check (M9) skips them
     }

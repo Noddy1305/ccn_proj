@@ -7,3 +7,9 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .env
+
+# public evaluation emails (session 7): rebuilt by scripts/fetch_eval_emails.py, never committed
+phishguard/data/eval/
+
+# trial runs of scripts/evaluate.py --limit
+phishguard/results/trial.*

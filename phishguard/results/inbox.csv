@@ -1,0 +1,7 @@
+file,actual,source,score,verdict,score_no_tone,verdict_no_tone,tone_score,flags,not_run,seconds
+inbox_01.eml,legitimate,"own inbox (recent, genuine)",0,safe,0,safe,,,tone,1.66
+inbox_02.eml,legitimate,"own inbox (recent, genuine)",0,safe,0,safe,,,tone,5.62
+inbox_03.eml,legitimate,"own inbox (recent, genuine)",15,safe,15,safe,,link_text_mismatch,tone,0.92
+inbox_04.eml,legitimate,"own inbox (recent, genuine)",0,safe,0,safe,,,tone,0.03
+inbox_05.eml,legitimate,"own inbox (recent, genuine)",0,safe,0,safe,,,tone,0.03
+inbox_06.eml,legitimate,"own inbox (recent, genuine)",0,safe,0,safe,,,tone,1.26

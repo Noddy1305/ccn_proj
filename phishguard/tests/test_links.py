@@ -51,8 +51,8 @@ def test_lookalike_hidden_in_subdomain():
 
 def test_lookalike_two_letters_only_for_long_domains():
     assert lookalike_of("hdfcbxxk.cxm", TRUSTED) is None       # 3 edits: too far
-    assert lookalike_of("hdfcbnk.cxm", TRUSTED)[2] == 2         # 11 chars, 2 edits: allowed
-    assert lookalike_of("amazon.cx", TRUSTED) is None           # 9 chars: only 1 edit allowed
+    assert lookalike_of("hdfcbnk.cxm", TRUSTED)[2] == 2         # 7-letter name, 2 edits: allowed
+    assert lookalike_of("amazon.cx", TRUSTED) is None           # 6-letter name: only 1 edit allowed
     assert lookalike_of("hdfcbnk.com", TRUSTED)[2] == 1
     assert lookalike_of("unionbankofindla.co.in", TRUSTED) is not None
     assert lookalike_of("icicibank.com", TRUSTED) is None       # exact trusted domain is not a lookalike
@@ -210,7 +210,8 @@ def test_fixture_email_raises_exactly_its_finding(zone, finding):
 # ---------- regression: genuine domains that once looked like false positives
 
 @pytest.mark.parametrize("host", ["kodak.com", "olx.com", "line.com", "mail.com", "metal.com",
-                                  "nitc.ac.in", "xbox.com", "slack.com"])
+                                  "nitc.ac.in", "xbox.com", "slack.com",
+                                  "redhat.com"])          # 2 letters from reddit.com (session 7 evaluation)
 def test_genuine_lookalike_neighbours_not_flagged(host):
     assert lookalike_of(host, TRUSTED) is None
     assert brand_in(host, BRANDS) is None
@@ -229,3 +230,11 @@ def test_text_and_href_both_trusted_is_not_a_mismatch(zone):
 def test_brands_other_domains_on_trusted_list_are_trusted():
     from modules.links import is_trusted
     assert is_trusted("hubspot.net", TRUSTED) and is_trusted("www.paypal.me", TRUSTED)
+
+
+def test_hubspot_tracking_links_are_trusted_not_a_fake_hubspot():
+    # Found on a real newsletter in the session 7 review: HubSpot's own click-tracking domain was flagged as
+    # "brand name inside an unrelated domain".
+    from modules.links import is_trusted
+    assert is_trusted("abc123.na1.hubspotlinks.com", TRUSTED)
+    assert brand_in("hubspot-login.example.com", BRANDS) == "hubspot"      # a real fake is still caught

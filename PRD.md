@@ -78,6 +78,7 @@ P0 is the minimum demonstrable project; P1 is added once P0 works end to end; P2
 | M7 | Report generator (LLM text + PDF export) | P0 | The plain-English output, on screen and as a PDF |
 | M8 | Dashboard (results + PDF download) | P0 | The demo surface |
 | M4 | Certificate check (TLS) | P1 | Strong addition, but the tool is complete without it |
+| M9 | Disguise check (sender name, risky attachments, free-hosting and redirect links) | P1, added in session 7 | The evaluation showed recent phishing often passes SPF/DKIM/DMARC |
 | — | Offline demo mode (cached results) | P1 | Protects the live demo |
 | — | Batch mode: analyse a folder of emails, export results to CSV | P2 | Needed only for larger evaluation |
 
@@ -172,7 +173,7 @@ The single page the user interacts with.
 
 ## 6. Risk scoring logic
 
-The verdict comes from adding fixed points for each red flag; the LLM's tone score can add at most 15 points, which is below the 30-point Suspicious line, so the AI can never flag an email on its own.
+The verdict comes from adding fixed points for each red flag; the LLM's tone score can add at most 20 points, which is below the 30-point Suspicious line, so the AI can never flag an email on its own.
 
 **Verdict thresholds**
 
@@ -203,7 +204,7 @@ The verdict comes from adding fixed points for each red flag; the LLM's tone sco
 | Certificate | Expired | 15 |
 | Certificate | Hostname mismatch | 15 |
 | Certificate | Issued in the last 7 days | 5 |
-| Tone (LLM) | Manipulation score s (0–10) | 1.5 × s, max 15 |
+| Tone (LLM) | Manipulation score s (0–10) | 2.5 × s, max 20 (was 1.5 × s, max 15; tuned once in session 7) |
 
 **Rules**
 
@@ -240,7 +241,8 @@ M1 Email parser  (headers, links, body)
       +--> M2 Sender check     (SPF, DKIM, DMARC, Reply-To)      [rule-based]
       +--> M3 Link & domain    (lookalike, WHOIS age, DNS)       [rule-based]
       +--> M4 Certificate      (TLS chain, expiry, hostname; P1) [rule-based]
-      +--> M5 Tone analysis    (manipulation 0-10, max 15 pts)   [LLM]
+      +--> M9 Disguise         (sender name, attachments, hidden links; no network) [rule-based]
+      +--> M5 Tone analysis    (manipulation 0-10, max 20 pts)   [LLM]
       |
 M6 Risk scoring engine  (fixed points from config -> Safe / Suspicious / Phishing)   [rule-based, decides the verdict]
       |
@@ -403,12 +405,12 @@ The build runs in eight sessions; after session 5 the project is complete at P0 
 
 ## 15. Changes since v1 (as built, sessions 1-4)
 
-Status: M1 to M8 and offline demo mode are built (sessions 1-6). The evaluation (session 7) and review prep (session 8) are not. Decisions and deviations made during the build:
+Status: M1 to M8 and offline demo mode are built (sessions 1-6), and the evaluation is done (session 7, `phishguard/results/evaluation.md` and `heldout.md`), including the new disguise check (M9). Review prep (session 8) is not. Decisions and deviations made during the build:
 
 | Area | v1 said | As built / decided | Why |
 | --- | --- | --- | --- |
 | Return-Path (FR-2.5) | Flag any difference | Excused when DMARC passes; Reply-To always flagged | A real YouTube email (Return-Path on a Google domain) was wrongly penalised |
-| Lookalike (FR-3.1) | Edit distance 1-2 | Distance 2 only for domains of 10+ characters; name part at least 6 letters; subdomain-hidden lookalikes also checked | Avoid false alarms on short real domains |
+| Lookalike (FR-3.1) | Edit distance 1-2 | Distance 2 only for names of 7+ letters (was: 10+ characters including the ending); name part at least 6 letters; subdomain-hidden lookalikes also checked | Avoid false alarms on short real domains; the session 7 evaluation found redhat.com flagged as a fake reddit.com |
 | Brands (FR-3.2) | Any brand in an unrelated domain | Everyday-word brands excluded | Avoid false alarms (live, office, zoom, uber) |
 | Text mismatch (FR-3.4) | Any difference | Skipped when both domains are trusted | Big companies use several of their own domains |
 | LLM provider | Undecided | Nemotron (`LLM_API_KEY`) + Ollama fallback, switchable in config | Team decision |
@@ -433,8 +435,17 @@ Status: M1 to M8 and offline demo mode are built (sessions 1-6). The evaluation 
 | Dashboard (M8) | Upload, badge, cards, report, progress, samples | Drag-and-drop upload, verdict banner with score, "Checking..." indicator, 4 built-in samples (forged, genuine, newsletter, corpus), parsed technical details collapsed at the bottom | FR-8.1 to 8.7 |
 | Report prompt inputs | Verdict, score, findings | Also leaves out the DMARC `policy p=...` text and the tone arithmetic, and the prompt forbids invented causes | In live runs the AI kept writing "DMARC failed because the policy is none" and "scaled to 15 points" |
 | Certificate check (FR-4.1 to 4.4) | Handshake only; four flags | Strict handshake first; if it fails, a second unverified handshake only to read the certificate. Expiry, name match (with wildcards) and age are checked by our code because OpenSSL reports only its first error. Trusted domains and raw-IP links are not checked; at most 10 hosts; one hard time limit for all handshakes | Evidence for every flag, and no single stuck site can freeze the page |
-| Certificate on sample data | Not specified | `newsletter.eml` links to the real `www.shopmart.com`, whose server shows a hosting company's certificate: hostname mismatch, +15, so the sample is now 30 (Suspicious) | A real, browser-visible problem; the demo plan already allowed Safe or Suspicious |
+| Certificate on sample data | Not specified | `newsletter.eml` links to the real `www.shopmart.com`, whose server shows a hosting company's certificate: hostname mismatch, +15, so the sample is now 33 (Suspicious) after the session 7 tuning | A real, browser-visible problem; the demo plan already allowed Safe or Suspicious |
 | Offline mode (NFR-4) | Replay saved DNS, WHOIS, certificate and LLM results | Lookup-level record/replay: one wrapper (`offline.cached`) on every network function; modes live / record / replay; a missing answer fails like "no internet"; failed lookups are never saved; replay uses the recording time for ages and expiry; answers in `data/cache/lookups.json` (committed) | The checking code still runs offline; results match the recording exactly |
 | Offline safety | Not specified | The app accepts only live or replay (config `offline.mode` or `PHISHGUARD_MODE`) and refuses to start on a typo; record mode only via `scripts/record_offline_cache.py`, which reads the samples only; AI answers keyed by a hash of the prompt; replay is announced on the page and in the PDF | Uploaded emails are never written to disk (PRV-1) |
 | Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`, `modules/offline.py`, `templates/_report.html`, `templates/_footer.html`, `scripts/record_offline_cache.py`; created: `certificate.py`, `tone.py`, `report.py`, `llm_client.py`, `report.html`; not yet created: `evaluate.py` | Documentation, shared config helpers and offline mode |
 | Performance | 5 s per lookup, parallel | M2 and M3 run side by side; WHOIS gives up after 6 s; at most 10 untrusted domains looked up | Keep one email under 15 s |
+| Evaluation data (section 10) | 30 Nazario + 20 own phishing; 50 own legitimate | 50 Nazario 2025 phishing; 50 SpamAssassin 2002-03 legitimate (40 easy_ham + 10 hard_ham), fixed seed, downloaded by `scripts/fetch_eval_emails.py`, never committed | No time to collect inbox emails; there is no public set of recent legitimate email with headers. The old set makes the sender check fail for age reasons, so results also show a "without sender check" view |
+| Tuning (section 10, step 4) | Tune weights once, then freeze | One change, chosen on the odd-numbered half only: tone 2.5 x s, cap 20 (was 1.5 x s, cap 15). The tone card stays amber at most | Recent phishing with a high tone score stopped at 20-29 points. The cap of 20 still needs 10+ points of non-AI evidence to reach Suspicious |
+| Evaluation result | Targets: detection >= 85%, false positives <= 10%, <= 15 s | Held-out set (final): detection 74% (58% without the one-mailbox "own organisation" rule; 40% without M9), false positives 86%, of which 40 of 43 are made only of age-related flags (2% with the sender check left out), about 2 s average. Its first run gave 84% / 88%, before the SPF correction below. Main set: 44% at first, 54% after tuning, 74% with M9, 64% after the SPF correction. Own inbox: 6 of 6 recent genuine emails Safe (AI off) | Recent phishing often passes SPF/DKIM/DMARC by sending through real services, so M9 was added; the 2002 legitimate set makes the false-positive rate unreliable. See `results/` |
+| Disguise check (M9) | Not in v1 | New check, no network: brand or other address in the sender name, own organisation in the sender name from outside, risky attachments (by file name), free-hosting links, redirect links (unwrapped). Skips mailing lists (`List-Id`), "via" senders and free-mail recipients. Points set by analogy before the held-out test | Designed from the tuning-half misses; raises held-out detection from 40% to 74% with no extra false alarms |
+| Held-out set | Not in v1 | A second 100: Nazario 2024 phishing + SpamAssassin easy_ham_2 / hard_ham, none shared with the main set (`fetch_eval_emails.py --heldout`), run once after everything was frozen, and once more after the SPF correction (both runs kept) | The main set's results were seen while building, so they flatter the tool |
+| SPF verdict (FR-2.1, FR-2.4) | Live SPF check first; Authentication-Results only as fallback | The receiving server's SPF verdict (topmost Authentication-Results) is used when present; the live re-check (IP guessed from the Received headers) is the backup. DKIM and DMARC unchanged: live first | Session 7 review: on 17 of 50 emails the guessed IP was not the connecting IP the receiving server saw, and the tool reported "SPF failed" for emails recorded as pass. SPF is a delivery-time fact about the connecting computer |
+| Report contradiction rule (FR-7.3) | Reject AI text that contradicts the verdict | Sentence-based: rejects only a plain statement that the email (or verdict) is safe / genuine / legitimate / harmless | The looser rule discarded good reports ("no DMARC record to prove the email is legitimate") |
+| Own-inbox check | 50 legitimate emails from our own inboxes | `evaluate.py --set inbox`: 6 recent genuine emails, AI off, listed by number, never committed | Privacy (PRV-1, PRV-2): no email text sent to the cloud without an explicit decision; a small sample, reported as supporting evidence only |
+| Demo emails after tuning | forged Phishing, genuine Safe, newsletter Safe or Suspicious, corpus Phishing | forged 100 Phishing, genuine 5 Safe, newsletter 33 Suspicious, corpus 40 Suspicious | corpus_phish stays Suspicious: raising weights just to move one demo email would be tuning to the demo |

@@ -6,6 +6,11 @@ claims. Each mechanism gets a result and a "source":
   reported by mail server - taken from the receiving server's
                             Authentication-Results header (FR-2.4)
   could not run         - neither was possible; adds 0 points
+
+SPF is the one mechanism where the receiving server's verdict comes FIRST: SPF asks "was the computer that
+handed this email over allowed to?", and only the receiving server saw that computer, at that moment. We can
+only guess its address from the Received headers afterwards. DKIM is the opposite: the signature travels with
+the email, so we can verify it ourselves at any time.
 Points come from config.yaml, never from this file.
 """
 import re
@@ -96,7 +101,10 @@ def parse_auth_results(headers):
             out[mech] = "pass" if "pass" in [f.lower() for f in found] else found[0].lower()
     m = re.search(r"smtp\.mailfrom=([^\s;]+)", text, re.I)
     if m:
-        out["spf_domain"] = domain_of(m.group(1)) or m.group(1).lower()
+        mailfrom = m.group(1).strip("\"'<>")                    # Gmail writes smtp.mailfrom="prvs=...@tcs.com"
+        out["spf_domain"] = domain_of(mailfrom) or mailfrom.lower()
+    server = text.split(";", 1)[0].strip().lower()             # who wrote the header, e.g. mx.google.com
+    out["server"] = server if server and "=" not in server and " " not in server else ""
     m = re.search(r"header\.d=([^\s;]+)", text, re.I)
     if m:
         out["dkim_domain"] = m.group(1).lower()
@@ -118,10 +126,23 @@ def _helo_for(parsed):
     return ""
 
 
+SPF_VERDICTS = ("pass", "fail", "softfail", "neutral", "none")
+
+
 def check_spf(parsed, auth, timeout):
-    """FR-2.1. SPF is tested against the Return-Path (envelope) domain, not From."""
+    """FR-2.1. SPF is tested against the Return-Path (envelope) domain, not From.
+
+    If the receiving mail server recorded its SPF verdict, that verdict is used: the server saw the real
+    connecting computer and checked at the moment of delivery. Our own re-check has to guess that computer's IP
+    from the Received headers (wrong whenever the email passed through a relay) and uses today's DNS, so it is
+    only the backup, for emails that carry no verdict (found in the session 7 review)."""
     sender = parsed["return_path"]["address"] or parsed["from"]["address"]
     domain = domain_of(sender)
+    if auth.get("spf") in SPF_VERDICTS:
+        checked = auth.get("spf_domain") or domain
+        return {"result": auth["spf"], "domain": checked, "source": REPORTED,
+                "evidence": f"The receiving mail server ({auth.get('server') or 'unnamed'}) checked SPF when the email "
+                            f"arrived and reported spf={auth['spf']}" + (f" for {checked}" if checked else "")}
     ip = parsed.get("sending_ip", "")
     result, reason = "error", ""
     if not ip or not domain:
@@ -139,11 +160,9 @@ def check_spf(parsed, auth, timeout):
     if result != "error":
         return {"result": result, "domain": domain, "source": LIVE,
                 "evidence": f"Sending IP {ip}, envelope domain {domain}: {reason}"}
-    if auth.get("spf"):
-        return {"result": auth["spf"], "domain": auth.get("spf_domain", domain), "source": REPORTED,
-                "evidence": f"Live check unavailable ({reason}); mail server reported spf={auth['spf']}"}
+    also = f"; the receiving mail server could not check it either (spf={auth['spf']})" if auth.get("spf") else ""
     return {"result": "error", "domain": domain, "source": NOT_RUN,
-            "evidence": f"SPF could not run: {reason}"}
+            "evidence": f"SPF could not run: {reason}{also}"}
 
 
 # ---------------------------------------------------------------- DKIM

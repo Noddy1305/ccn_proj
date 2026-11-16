@@ -1,9 +1,9 @@
 {
- "recorded_at": "2026-11-16T08:46:30.760750+00:00",
+ "recorded_at": "2026-11-16T18:18:33.551748+00:00",
  "note": "Saved internet answers for the sample emails (offline demo mode). Re-create with scripts/record_offline_cache.py. AI answers are keyed by a hash of the prompt.",
  "samples": {
   "corpus_phish.eml": {
-   "score": 32,
+   "score": 40,
    "verdict": "suspicious",
    "report": "ai",
    "not_run": []
@@ -21,17 +21,32 @@
    "not_run": []
   },
   "newsletter.eml": {
-   "score": 30,
+   "score": 33,
    "verdict": "suspicious",
    "report": "ai",
    "not_run": []
   }
  },
  "answers": {
+  "ai|[\"1770f3ee43d82c3deef1a5663609c198\"]": {
+   "summary": "A phishing email pretending to be from a university, aiming to steal login credentials. Verdict: phishing.",
+   "evidence_explained": "The email failed authentication checks. The sender's domain is srmist.edu.in, but the SPF check failed because the domain srmlst-verify.com is not allowed. The domain srmlst.edu.in is one letter different from the trusted srmist.edu.in, and a link uses this lookalike address. The link text claims to go to srmist.edu.in but actually routes to srmlst.edu.in.verify-login.com. The email also uses a raw IP address, has a mismatched Reply-To and Return-Path domain, and lacks a DKIM signature. The wording pressures the reader into action.",
+   "recommended_actions": "Do not click any links or enter passwords. Delete the email. If you use the same password as the account mentioned, change it immediately on the real service."
+  },
+  "ai|[\"20f27af60674516f95295be868cc55a3\"]": {
+   "summary": "A suspicious email claiming a delivery issue, with a link to a mismatched website.",
+   "evidence_explained": "The email pressures you to act quickly with manipulative wording. The link leads to www.shopmart.com, but the website's security certificate is issued for a different name, which browsers would flag as untrustworthy. The email also lacks both a DKIM signature and a DMARC record, meaning there is no verified proof that shopmart.com actually sent it.",
+   "recommended_actions": "Do not click the link or enter any details. If you have an account with the real service, log in directly through your usual app or website. Report the email as phishing and delete it."
+  },
   "ai|[\"22890c95b7af7dc678a225905a2069a2\"]": {
    "summary": "A phishing email pretending to be from a university, with multiple signs of spoofing and deception.",
    "evidence_explained": "The email claims to be from srmist.edu.in, but the sending domain and reply-to address are srmlst-verify.com, a different domain. The link text says srmist.edu.in but the actual destination is srmlst.edu.in.verify-login.com, which is one letter away from the real domain. The link also goes to a raw IP address 203.0.113.50 instead of a website. The email has no DKIM signature, and DMARC failed because the domain alignment is broken. The wording pressures the reader to act quickly.",
    "recommended_actions": "Do not click any links or reply. Delete the email. If you need to verify the matter, contact the organization through a known, trusted method such as their official website or phone number."
+  },
+  "ai|[\"2789aae4af1491a3843a575c3e40cec1\"]": {
+   "summary": "A suspicious email claiming to be from Shopmart, with a mismatched security certificate and pressure tactics.",
+   "evidence_explained": "The email's security certificate is for www.shopmart.com, but the email does not match that name, which is a red flag. The wording uses AI-generated pressure tactics to urge quick action. Additionally, the email lacks both a DKIM signature and a DMARC record, meaning there is no verified proof of the sender's identity.",
+   "recommended_actions": "Do not click any links or download attachments. If you have an account with Shopmart, log in directly through your usual browser method. Otherwise, delete the email."
   },
   "ai|[\"2dcf24d74e0b8a0559839ed88bdd2277\"]": {
    "score": 3,
@@ -47,6 +62,16 @@
    "evidence_explained": "The email uses urgent, manipulative language to pressure you into acting quickly. Technical checks show the sender's domain name cannot be resolved into a real website address. The email also lacks two standard security signatures: DKIM and DMARC, which are normally used to verify that an email truly comes from the claimed sender.",
    "recommended_actions": "Do not click any links or download attachments. If you have an account with the claimed organization, contact them directly through a known, trusted method. Delete the email."
   },
+  "ai|[\"4046e8b5230abbc964ef791b311b39db\"]": {
+   "summary": "A phishing email pretending to be from a university domain. The verdict is phishing.",
+   "evidence_explained": "The email failed DMARC checks because the sender domain srmist.edu.in had an SPF fail for srmlst-verify.com and no DKIM signature. The link text claims to go to srmist.edu.in but actually goes to srmlst.edu.in, which is one letter different from the trusted domain. The link also uses a raw IP address 203.0.113.50. The Reply-To and Return-Path domains are srmlst-verify.com, which differ from the From domain. The wording of the email pressures the reader.",
+   "recommended_actions": "Do not click any links or reply. Delete the email. If you think the message might be legitimate, contact the organization using a known, trusted method such as their official website or phone number."
+  },
+  "ai|[\"5c38f4fe77b997790cad543ee037f098\"]": {
+   "summary": "This email passed all security checks and was classified as safe. A very low score indicates minimal risk.",
+   "evidence_explained": "The only finding was the absence of a DKIM-Signature header. This means the email was not cryptographically signed by the sending domain, but this alone does not indicate a phishing attempt.",
+   "recommended_actions": "No action is required. You can treat this email as legitimate, though you should always remain cautious with unexpected messages."
+  },
   "ai|[\"924ca4f313cbd73d638c1d55cf0b72bf\"]": {
    "score": 8,
    "tactics": [
@@ -58,33 +83,58 @@
    "tactic": "credential_request",
    "quote": "Confirm your password"
   },
+  "ai|[\"96cc8037024aeb2fd572ee4beabb43e1\"]": {
+   "summary": "A suspicious email with urgent wording claiming to be from a bank, but the sender's domain cannot be verified.",
+   "evidence_explained": "The email uses pressure tactics to force quick action. The domain bankofsecure-alerts.net does not exist in DNS, and there is no DKIM signature or DMARC record to prove the email is legitimate.",
+   "recommended_actions": "Do not click any links or download attachments. If you have an account with the claimed sender, contact them directly through a known, trusted method. Delete the email."
+  },
+  "ai|[\"a1a6ca7862a35ad061b4a0040873254d\"]": {
+   "summary": "A phishing email was detected with the maximum risk score. It combines multiple signs of deception, including domain spoofing, failed authentication and pressure tactics.",
+   "evidence_explained": "The email claims to come from srmist.edu.in but fails authentication checks. SPF and DKIM checks both failed, and the Reply-To and Return-Path domains differ from the displayed From address. A link appears to go to srmist.edu.in but actually leads to a lookalike domain srmlst.edu.in that is one character different, and it also uses a raw IP address. The wording is designed to pressure the reader into acting quickly.",
+   "recommended_actions": "Do not click any links or download attachments. If you were expecting a message from the stated sender, contact them through a known, trusted method to verify. Delete the email."
+  },
+  "ai|[\"aa7f56786172fa018a76949f09978242\"]": {
+   "summary": "A phishing email pretending to be from a university, aiming to steal login credentials.",
+   "evidence_explained": "The email claims to be from srmist.edu.in, but the sender address uses a different domain srmlst-verify.com. A link in the text looks like it goes to srmist.edu.in but actually points to srmlst.edu.in.verify-login.com, which is one character different from the real domain. The link also leads to a raw IP address 203.0.113.50. The email pressures the reader with urgent wording. The DMARC check failed, SPF could not be verified, and there is no DKIM signature to prove the sender's identity.",
+   "recommended_actions": "Do not click any links or enter passwords. Delete the email. If you think the message might be legitimate, contact the organization directly through a known, trusted method."
+  },
   "ai|[\"ab5771d3bfe29d22f4962ddbe59d2cbb\"]": {
    "summary": "This email is flagged as suspicious. It has several security issues that lower its trust score.",
    "evidence_explained": "The email's security certificate is for a different website name than the one it claims to be from. It also lacks two important email security protections: a DKIM signature and a DMARC record. Additionally, the language used in the email is designed to pressure or manipulate the reader.",
    "recommended_actions": "Do not click any links or download attachments in this email. If you were expecting a message from Shopmart, contact them through a known, trusted method, such as their official website or phone number. Otherwise, delete the email."
   },
   "ai|[\"c614ff04d17a546e876ce4f2979a40f2\"]": {
-   "score": 1,
-   "tactics": [
-    {
-     "tactic": "urgency",
-     "quote": "is now available on the academic portal"
-    }
-   ]
+   "score": 0,
+   "tactics": []
   },
   "ai|[\"cbc22cc812ee0a736465ca2433686e91\"]": {
-   "summary": "This email passed the safety check with a very low risk score. It was classified as safe despite a minor technical note.",
-   "evidence_explained": "The system checked the email's technical markers. It noted that there was no DKIM-Signature header present, which is a standard technical detail for some legitimate messages. No other suspicious markers were found, so the email was allowed through.",
-   "recommended_actions": "You can read and handle this email as normal. There is no indicated threat, so no special action is needed."
+   "summary": "A plain email with no DKIM signature. The system gave it a low safety score of 5 out of 100.",
+   "evidence_explained": "The email does not have a DKIM-Signature header. This means the sender's domain could not be verified as the true source of the message.",
+   "recommended_actions": "You can treat this email as normal. No special action is needed beyond standard caution with unknown senders."
+  },
+  "ai|[\"d3653bbf39b71bd3aefe5603c5eb7527\"]": {
+   "summary": "A suspicious email with pressure tactics and technical red flags. The verdict is suspicious.",
+   "evidence_explained": "The email uses urgent, pressure-filled language to prompt quick action. Technical checks show the sender's domain name cannot be found in the internet's address book, and the email lacks two standard authentication seals (DKIM and DMARC) that help prove it is really from who it claims to be.",
+   "recommended_actions": "Do not click any links or download attachments. If you have an account with the claimed organization, contact them directly through a known, trusted method. Delete the email."
   },
   "ai|[\"da2cd8d9ff555c87a734e49d443f3309\"]": {
    "score": 8,
    "tactics": [
     {
-     "tactic": "urgency",
-     "quote": "will be cancelled in 24 hours"
+     "tactic": "credential_request",
+     "quote": "verify your login credentials"
     }
    ]
+  },
+  "ai|[\"e3a0856556c35265703b648c67369cd5\"]": {
+   "summary": "This email was flagged as suspicious. It scored 33 out of 100 on phishing risk indicators.",
+   "evidence_explained": "Several technical issues were found. The website linked in the email has a security certificate that does not match its name, which can indicate a fake site. The email uses urgent or pressuring language to prompt action. It also lacks two standard email authentication markers: there is no DKIM signature and no DMARC record for the claimed domain.",
+   "recommended_actions": "Do not click any links or download attachments in this email. If you have an account with the claimed service, contact them directly through a known, trusted method. Report the email as phishing to your email provider."
+  },
+  "ai|[\"f796ceceae14b3a6f883d127dbe7f108\"]": {
+   "summary": "A suspicious email with several warning signs that raise concern.",
+   "evidence_explained": "The email uses wording that pressures the reader to act quickly. Technical checks show the domain bankofsecure-alerts.net does not resolve in DNS, meaning the address cannot be verified. The email also lacks a DKIM signature and has no DMARC record published for bankofsecure.com, which are both indicators that the message came from an unverified source.",
+   "recommended_actions": "Do not click any links or download attachments. If you have an account with the claimed organization, contact them through a known, trusted method to verify the message. Otherwise, delete the email."
   },
   "dns_txt|[\"_dmarc.bankofsecure.com\"]": [],
   "dns_txt|[\"_dmarc.email.shopmart.com\"]": [],
@@ -101,8 +151,8 @@
    "13.223.25.84"
   ],
   "dns|[\"srmlst.edu.in.verify-login.com\", \"AAAA\"]": [
-   "2600:1f18:4ae:c605:dd5d:b838:5816:d7fb",
-   "2600:1f18:4ae:c606:78d4:4260:db4e:aeee"
+   "2600:1f18:4ae:c606:78d4:4260:db4e:aeee",
+   "2600:1f18:4ae:c605:dd5d:b838:5816:d7fb"
   ],
   "dns|[\"verify-login.com\", \"MX\"]": [],
   "dns|[\"www.shopmart.com\", \"A\"]": [
@@ -143,7 +193,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "X3lyaGNxZXcyYjlweWs3amdhamlscGs3NHI5MmxnY3Q="
+        "__bytes__": "ZnBxanNmNWxoeXk4OXZsMDJsZ203dGdoNDEzbTZxcjk="
        }
       ]
      }
@@ -160,92 +210,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPW11WXkwbXVHNUE0S0N1RzcyQ0g0dFRLTV9hN1hJVU9BUzlCZVlzRUFZbVU="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "dj1zcGYxIGluY2x1ZGU6dXNlcm1haWwuem9ob2NyZWF0b3IuY29tIGluY2x1ZGU6X3NwZi5nb29nbGUuY29tIGluY2x1ZGU6bmxzbXRwLmNvbSBpbmNsdWRlOnNwZi5mYWxjb25pZGUuY29tIGluY2x1ZGU6YS5fc3BmLmJyaWdodHNwYWNlLmNvbSBpbmNsdWRlOnpjc2VuZC5pbiB+YWxs"
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "dnpmNm1ocnhnZzIyY3hjdnFmNHRzNXMxazJmYzV0OTY="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "eDF0bWo4anJ5a2w2ZDVmbnk1dDlkMDdsaDA5Mm1zOW4="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "TVM9NzU2NEY1OTU1RTRGMTg4QUI0QjBBNTMyRUU2N0IyQkQyRTlCNzgzQw=="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "NnBnYmd6eThzbmsycDRibXNxNmQxbjA5MDE1N2trd2Y="
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPUpMdThQdkpWNDhONEI5czUxakpFTHFUVzdLc01HSGJCOWpnalNnNmNJMWM="
        }
       ]
      }
@@ -296,92 +261,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "X2J2cDB2bmM4YjF5MTR4eG44ZTlxNDdsOXZtN2Nhc2k="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "TVM9bXM2ODY4NDM1Mw=="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "ZnBxanNmNWxoeXk4OXZsMDJsZ203dGdoNDEzbTZxcjk="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "cGczZmRkdDdqcnRwbW5wY3I1bnRqdTRhbzA="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "X3d3Z3l5dmc1ZWFjNzZ2OGI3dzdwNGJlcXlwNzRhMm0="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "dDIyYzFvMGJhMG9ncDRmMmZjaDlxODA4Y2s="
+        "__bytes__": "eDF0bWo4anJ5a2w2ZDVmbnk1dDlkMDdsaDA5Mm1zOW4="
        }
       ]
      }
@@ -415,6 +295,108 @@
      {
       "__tuple__": [
        {
+        "__bytes__": "NnBnYmd6eThzbmsycDRibXNxNmQxbjA5MDE1N2trd2Y="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "X2J2cDB2bmM4YjF5MTR4eG44ZTlxNDdsOXZtN2Nhc2k="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPW11WXkwbXVHNUE0S0N1RzcyQ0g0dFRLTV9hN1hJVU9BUzlCZVlzRUFZbVU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "TVM9NzU2NEY1OTU1RTRGMTg4QUI0QjBBNTMyRUU2N0IyQkQyRTlCNzgzQw=="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "X3d3Z3l5dmc1ZWFjNzZ2OGI3dzdwNGJlcXlwNzRhMm0="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWdiaXFiZVFpWTZha3BJTE5VcU0tY09FdjlIYkVCYjZhTDhUNEMwajZxQkk="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
         "__bytes__": "ejNtcWY0cmN4eTMzaHNmbTNiN3o1cTloNzl6ZGR3MDQ="
        }
       ]
@@ -432,7 +414,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPUpMdThQdkpWNDhONEI5czUxakpFTHFUVzdLc01HSGJCOWpnalNnNmNJMWM="
+        "__bytes__": "dnpmNm1ocnhnZzIyY3hjdnFmNHRzNXMxazJmYzV0OTY="
        }
       ]
      }
@@ -449,41 +431,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "YXFjMDQxMGZodm80MjBnMTd2cGJudjhwOTE="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "Z2RnbHByN3gzemxjNjZ6NWJkNDI5czh4cTk4ODM4Z2g="
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "__tuple__": [
-     {
-      "__tuple__": [
-       "srmist.edu.in",
-       "TXT"
-      ]
-     },
-     {
-      "__tuple__": [
-       {
-        "__bytes__": "MzloM2xodTFkODFvcjN1bXViODU4OTAzOGU="
+        "__bytes__": "X3lyaGNxZXcyYjlweWs3amdhamlscGs3NHI5MmxnY3Q="
        }
       ]
      }
@@ -517,7 +465,109 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWdiaXFiZVFpWTZha3BJTE5VcU0tY09FdjlIYkVCYjZhTDhUNEMwajZxQkk="
+        "__bytes__": "MzloM2xodTFkODFvcjN1bXViODU4OTAzOGU="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "cGczZmRkdDdqcnRwbW5wY3I1bnRqdTRhbzA="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "Z2RnbHByN3gzemxjNjZ6NWJkNDI5czh4cTk4ODM4Z2g="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dj1zcGYxIGluY2x1ZGU6dXNlcm1haWwuem9ob2NyZWF0b3IuY29tIGluY2x1ZGU6X3NwZi5nb29nbGUuY29tIGluY2x1ZGU6bmxzbXRwLmNvbSBpbmNsdWRlOnNwZi5mYWxjb25pZGUuY29tIGluY2x1ZGU6YS5fc3BmLmJyaWdodHNwYWNlLmNvbSBpbmNsdWRlOnpjc2VuZC5pbiB+YWxs"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "dDIyYzFvMGJhMG9ncDRmMmZjaDlxODA4Y2s="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "TVM9bXM2ODY4NDM1Mw=="
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "__tuple__": [
+     {
+      "__tuple__": [
+       "srmist.edu.in",
+       "TXT"
+      ]
+     },
+     {
+      "__tuple__": [
+       {
+        "__bytes__": "YXFjMDQxMGZodm80MjBnMTd2cGJudjhwOTE="
        }
       ]
      }
@@ -553,7 +603,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "dj1zcGYxIGlwNDoxMzYuMTQzLjE4OC4wLzI0IGlwNDoxMzUuODQuODAuMC8yNCBpcDQ6MTM1Ljg0LjgyLjAvMjQgaXA0OjE5OS42Ny42NC4wLzI0IGlwNDoxMzYuMTQzLjE4NC4wLzI0IGlwNDoxNjUuMTczLjE4MS4wLzI0IGlwNDoxNjUuMTczLjE4My4wLzI0IGlwNDo4LjM5LjU0LjI0MC8yOSBpcDQ6OC40MC4yMjIuMjQwLzI5IH5hbGw="
+        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWtUc3o5TmY0dnFET0l6ZDVGVDdOX2VkSV9xZ21MWFhwZ1FFeWZiWWRZbkE="
        }
       ]
      }
@@ -570,7 +620,7 @@
      {
       "__tuple__": [
        {
-        "__bytes__": "Z29vZ2xlLXNpdGUtdmVyaWZpY2F0aW9uPWtUc3o5TmY0dnFET0l6ZDVGVDdOX2VkSV9xZ21MWFhwZ1FFeWZiWWRZbkE="
+        "__bytes__": "dj1zcGYxIGlwNDoxMzYuMTQzLjE4OC4wLzI0IGlwNDoxMzUuODQuODAuMC8yNCBpcDQ6MTM1Ljg0LjgyLjAvMjQgaXA0OjE5OS42Ny42NC4wLzI0IGlwNDoxMzYuMTQzLjE4NC4wLzI0IGlwNDoxNjUuMTczLjE4MS4wLzI0IGlwNDoxNjUuMTczLjE4My4wLzI0IGlwNDo4LjM5LjU0LjI0MC8yOSBpcDQ6OC40MC4yMjIuMjQwLzI5IH5hbGw="
        }
       ]
      }

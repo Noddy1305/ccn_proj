@@ -1,0 +1,101 @@
+file,actual,source,score,verdict,score_no_tone,verdict_no_tone,tone_score,flags,not_run,seconds
+phish_001.eml,phishing,Nazario phishing corpus 2025,20,safe,20,safe,0.0,spf_none;dmarc_none;domain_unresolved,certificate,5.42
+phish_002.eml,phishing,Nazario phishing corpus 2025,20,safe,0,safe,8.0,,,2.05
+phish_003.eml,phishing,Nazario phishing corpus 2025,25,safe,15,safe,4.0,spf_softfail;dmarc_none,,0.78
+phish_004.eml,phishing,Nazario phishing corpus 2025,18,safe,10,safe,3.0,spf_none;dmarc_none,,0.67
+phish_005.eml,phishing,Nazario phishing corpus 2025,10,safe,10,safe,0.0,domain_mismatch,,3.26
+phish_006.eml,phishing,Nazario phishing corpus 2025,43,suspicious,25,safe,7.0,dkim_none;dmarc_none;cert_expired,,5.41
+phish_007.eml,phishing,Nazario phishing corpus 2025,0,safe,0,safe,0.0,,,1.35
+phish_008.eml,phishing,Nazario phishing corpus 2025,28,safe,10,safe,7.0,domain_unresolved,certificate,1.02
+phish_009.eml,phishing,Nazario phishing corpus 2025,15,safe,15,safe,0.0,dmarc_none;domain_mismatch,,0.73
+phish_010.eml,phishing,Nazario phishing corpus 2025,35,suspicious,35,suspicious,0.0,dmarc_fail;domain_mismatch,,0.74
+phish_011.eml,phishing,Nazario phishing corpus 2025,35,suspicious,35,suspicious,0.0,dmarc_fail;domain_mismatch,,0.77
+phish_012.eml,phishing,Nazario phishing corpus 2025,55,suspicious,35,suspicious,8.0,dmarc_fail;domain_mismatch,,19.17
+phish_013.eml,phishing,Nazario phishing corpus 2025,55,suspicious,35,suspicious,8.0,spf_fail;dmarc_none;domain_mismatch,,0.86
+phish_014.eml,phishing,Nazario phishing corpus 2025,50,suspicious,50,suspicious,0.0,spf_fail;dkim_none;dmarc_fail,,1.16
+phish_015.eml,phishing,Nazario phishing corpus 2025,43,suspicious,35,suspicious,3.0,spf_fail;dmarc_none;domain_unresolved,certificate,2.78
+phish_016.eml,phishing,Nazario phishing corpus 2025,68,phishing,50,suspicious,7.0,dkim_none;dmarc_fail;domain_mismatch;domain_unresolved,certificate,5.41
+phish_017.eml,phishing,Nazario phishing corpus 2025,10,safe,10,safe,0.0,dkim_none;cert_new,,1.33
+phish_018.eml,phishing,Nazario phishing corpus 2025,28,safe,10,safe,7.0,spf_softfail,,0.88
+phish_019.eml,phishing,Nazario phishing corpus 2025,5,safe,5,safe,0.0,dmarc_none,,5.82
+phish_020.eml,phishing,Nazario phishing corpus 2025,38,suspicious,20,safe,7.0,spf_fail,,1.48
+phish_021.eml,phishing,Nazario phishing corpus 2025,28,safe,15,safe,5.0,dmarc_none;domain_unresolved,certificate,5.41
+phish_022.eml,phishing,Nazario phishing corpus 2025,28,safe,10,safe,7.0,dkim_none;dmarc_none,,5.41
+phish_023.eml,phishing,Nazario phishing corpus 2025,50,suspicious,50,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;brand_in_domain;link_text_mismatch,,0.73
+phish_024.eml,phishing,Nazario phishing corpus 2025,30,suspicious,30,suspicious,0.0,spf_fail;dkim_none;dmarc_none,,0.88
+phish_025.eml,phishing,Nazario phishing corpus 2025,28,safe,20,safe,3.0,dmarc_none;brand_in_domain,,5.41
+phish_026.eml,phishing,Nazario phishing corpus 2025,33,suspicious,25,safe,3.0,spf_none;dmarc_none;brand_in_domain,,1.31
+phish_027.eml,phishing,Nazario phishing corpus 2025,33,suspicious,25,safe,3.0,spf_none;dmarc_none;brand_in_domain,,1.26
+phish_028.eml,phishing,Nazario phishing corpus 2025,33,suspicious,25,safe,3.0,spf_none;dmarc_none;brand_in_domain,,1.25
+phish_029.eml,phishing,Nazario phishing corpus 2025,48,suspicious,35,suspicious,5.0,dmarc_none;brand_in_domain;link_text_mismatch,,5.41
+phish_030.eml,phishing,Nazario phishing corpus 2025,48,suspicious,40,suspicious,3.0,dkim_none;dmarc_fail;domain_mismatch,,5.41
+phish_031.eml,phishing,Nazario phishing corpus 2025,55,suspicious,45,suspicious,4.0,spf_softfail;dmarc_fail;domain_mismatch,,0.66
+phish_032.eml,phishing,Nazario phishing corpus 2025,25,safe,25,safe,0.0,spf_fail;dmarc_none,,0.71
+phish_033.eml,phishing,Nazario phishing corpus 2025,13,safe,5,safe,3.0,dmarc_none,,0.63
+phish_034.eml,phishing,Nazario phishing corpus 2025,28,safe,15,safe,5.0,dmarc_none;domain_unresolved,certificate,5.41
+phish_035.eml,phishing,Nazario phishing corpus 2025,53,suspicious,45,suspicious,3.0,spf_fail;dmarc_none;domain_mismatch;domain_unresolved,certificate,0.6
+phish_036.eml,phishing,Nazario phishing corpus 2025,55,suspicious,35,suspicious,8.0,spf_softfail;dkim_none;dmarc_none;cert_hostname_mismatch,,4.03
+phish_037.eml,phishing,Nazario phishing corpus 2025,33,suspicious,15,safe,7.0,dmarc_none;domain_unresolved,certificate,5.41
+phish_038.eml,phishing,Nazario phishing corpus 2025,43,suspicious,35,suspicious,3.0,spf_softfail;dmarc_fail,,0.86
+phish_039.eml,phishing,Nazario phishing corpus 2025,33,suspicious,15,safe,7.0,dmarc_none;domain_mismatch,,5.44
+phish_040.eml,phishing,Nazario phishing corpus 2025,23,safe,15,safe,3.0,spf_softfail;dmarc_none,,5.41
+phish_041.eml,phishing,Nazario phishing corpus 2025,23,safe,5,safe,7.0,dmarc_none,,5.41
+phish_042.eml,phishing,Nazario phishing corpus 2025,23,safe,15,safe,3.0,dmarc_none;domain_unresolved,certificate,5.41
+phish_043.eml,phishing,Nazario phishing corpus 2025,48,suspicious,35,suspicious,5.0,dkim_none;dmarc_none;link_text_mismatch;domain_unresolved,certificate,5.41
+phish_044.eml,phishing,Nazario phishing corpus 2025,28,safe,10,safe,7.0,spf_none;dmarc_none,,0.74
+phish_045.eml,phishing,Nazario phishing corpus 2025,8,safe,0,safe,3.0,,,0.82
+phish_046.eml,phishing,Nazario phishing corpus 2025,28,safe,10,safe,7.0,dkim_none;dmarc_none,,5.41
+phish_047.eml,phishing,Nazario phishing corpus 2025,33,suspicious,15,safe,7.0,spf_softfail;dmarc_none,,1.34
+phish_048.eml,phishing,Nazario phishing corpus 2025,40,suspicious,25,safe,6.0,spf_fail;dmarc_none,,0.92
+phish_049.eml,phishing,Nazario phishing corpus 2025,68,phishing,55,suspicious,5.0,spf_softfail;dkim_none;dmarc_fail;link_text_mismatch,,0.75
+phish_050.eml,phishing,Nazario phishing corpus 2025,33,suspicious,15,safe,7.0,dmarc_none;domain_unresolved,certificate,18.95
+easy_001.eml,legitimate,SpamAssassin easy_ham (2002-03),60,phishing,60,phishing,0.0,spf_fail;dkim_none;dmarc_fail;domain_unresolved,,1.66
+easy_002.eml,legitimate,SpamAssassin easy_ham (2002-03),55,suspicious,55,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;domain_unresolved,certificate,1.29
+easy_003.eml,legitimate,SpamAssassin easy_ham (2002-03),55,suspicious,55,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;domain_unresolved,certificate,1.6
+easy_004.eml,legitimate,SpamAssassin easy_ham (2002-03),55,suspicious,55,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;domain_unresolved,certificate,1.41
+easy_005.eml,legitimate,SpamAssassin easy_ham (2002-03),30,suspicious,30,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;domain_mismatch,,1.41
+easy_006.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,dkim_none;dmarc_none;domain_mismatch,,5.41
+easy_007.eml,legitimate,SpamAssassin easy_ham (2002-03),18,safe,10,safe,3.0,domain_unresolved,sender,1.25
+easy_008.eml,legitimate,SpamAssassin easy_ham (2002-03),50,suspicious,50,suspicious,0.0,spf_softfail;dkim_none;dmarc_fail;domain_mismatch,,4.91
+easy_009.eml,legitimate,SpamAssassin easy_ham (2002-03),0,safe,0,safe,0.0,,sender,1.29
+easy_010.eml,legitimate,SpamAssassin easy_ham (2002-03),58,suspicious,50,suspicious,3.0,spf_softfail;dkim_none;dmarc_fail;domain_mismatch,,0.96
+easy_011.eml,legitimate,SpamAssassin easy_ham (2002-03),30,suspicious,30,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;domain_mismatch,,1.58
+easy_012.eml,legitimate,SpamAssassin easy_ham (2002-03),30,suspicious,30,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;domain_mismatch,,0.79
+easy_013.eml,legitimate,SpamAssassin easy_ham (2002-03),0,safe,0,safe,0.0,,sender,5.41
+easy_014.eml,legitimate,SpamAssassin easy_ham (2002-03),30,suspicious,30,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;domain_mismatch,,1.54
+easy_015.eml,legitimate,SpamAssassin easy_ham (2002-03),50,suspicious,50,suspicious,0.0,spf_softfail;dkim_none;dmarc_fail;domain_mismatch,,0.79
+easy_016.eml,legitimate,SpamAssassin easy_ham (2002-03),40,suspicious,40,suspicious,0.0,spf_softfail;dkim_none;dmarc_none;domain_mismatch;domain_unresolved,,1.53
+easy_017.eml,legitimate,SpamAssassin easy_ham (2002-03),50,suspicious,50,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;cert_new,,7.09
+easy_018.eml,legitimate,SpamAssassin easy_ham (2002-03),35,suspicious,35,suspicious,0.0,spf_none;dkim_none;dmarc_none;domain_mismatch;domain_unresolved,,1.54
+easy_019.eml,legitimate,SpamAssassin easy_ham (2002-03),55,suspicious,55,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;domain_unresolved,,1.13
+easy_020.eml,legitimate,SpamAssassin easy_ham (2002-03),25,safe,25,safe,0.0,spf_none;dkim_none;dmarc_none;domain_mismatch,,1.28
+easy_021.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,spf_none;dkim_none;domain_mismatch,,5.41
+easy_022.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,domain_unresolved,sender,5.44
+easy_023.eml,legitimate,SpamAssassin easy_ham (2002-03),18,safe,10,safe,3.0,dkim_none;dmarc_none,,1.34
+easy_024.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,1.18
+easy_025.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,4.48
+easy_026.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,5.94
+easy_027.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,dkim_none;dmarc_none;domain_unresolved,,2.98
+easy_028.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,5.73
+easy_029.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,1.72
+easy_030.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,3.47
+easy_031.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,dkim_none;dmarc_none;domain_unresolved,,2.86
+easy_032.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,dkim_none;dmarc_none;domain_unresolved,,1.49
+easy_033.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,5.72
+easy_034.eml,legitimate,SpamAssassin easy_ham (2002-03),10,safe,10,safe,0.0,dkim_none;dmarc_none,,5.79
+easy_035.eml,legitimate,SpamAssassin easy_ham (2002-03),20,safe,20,safe,0.0,dkim_none;dmarc_none;domain_unresolved,,1.49
+easy_036.eml,legitimate,SpamAssassin easy_ham (2002-03),40,suspicious,40,suspicious,0.0,dkim_none;dmarc_fail;domain_mismatch,,0.62
+easy_037.eml,legitimate,SpamAssassin easy_ham (2002-03),60,phishing,60,phishing,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;domain_unresolved;cert_new,,5.0
+easy_038.eml,legitimate,SpamAssassin easy_ham (2002-03),50,suspicious,50,suspicious,0.0,spf_none;dkim_none;dmarc_fail;domain_mismatch;cert_new,,1.47
+easy_039.eml,legitimate,SpamAssassin easy_ham (2002-03),0,safe,0,safe,0.0,,sender,1.22
+easy_040.eml,legitimate,SpamAssassin easy_ham (2002-03),0,safe,0,safe,0.0,,sender,0.57
+hard_001.eml,legitimate,SpamAssassin hard_ham (2002-03),58,suspicious,50,suspicious,3.0,spf_fail;dkim_none;dmarc_fail,,5.75
+hard_002.eml,legitimate,SpamAssassin hard_ham (2002-03),50,suspicious,50,suspicious,0.0,spf_softfail;dkim_none;dmarc_fail;domain_unresolved,,5.42
+hard_003.eml,legitimate,SpamAssassin hard_ham (2002-03),10,safe,0,safe,4.0,,sender,1.43
+hard_004.eml,legitimate,SpamAssassin hard_ham (2002-03),38,suspicious,30,suspicious,3.0,dkim_none;dmarc_fail,,1.88
+hard_005.eml,legitimate,SpamAssassin hard_ham (2002-03),10,safe,10,safe,0.0,domain_unresolved,sender,5.81
+hard_006.eml,legitimate,SpamAssassin hard_ham (2002-03),35,suspicious,35,suspicious,0.0,dkim_none;dmarc_none;link_text_mismatch;domain_unresolved,,5.44
+hard_007.eml,legitimate,SpamAssassin hard_ham (2002-03),40,suspicious,40,suspicious,0.0,spf_none;dkim_none;dmarc_none;link_text_mismatch;domain_unresolved,,1.29
+hard_008.eml,legitimate,SpamAssassin hard_ham (2002-03),40,suspicious,40,suspicious,0.0,spf_none;dkim_none;dmarc_none;link_text_mismatch;domain_unresolved,,4.49
+hard_009.eml,legitimate,SpamAssassin hard_ham (2002-03),40,suspicious,40,suspicious,0.0,spf_none;dkim_none;dmarc_none;brand_in_domain;domain_unresolved,,6.23
+hard_010.eml,legitimate,SpamAssassin hard_ham (2002-03),30,suspicious,30,suspicious,0.0,dkim_none;dmarc_fail,,1.8

@@ -98,7 +98,7 @@ Said another way: in replay, **all the checking code still runs** (SPF rules, lo
 2. Handshake 1 (strict) fails. OpenSSL says: "Hostname mismatch, certificate is not valid for 'www.shopmart.com'".
 3. Handshake 2 (just to read) gets the certificate: issued by DigiCert, valid until March 2027, but it covers `*.squarespace.com` and similar names, **not** `www.shopmart.com`.
 4. Our own checks: trusted issuer (no untrusted flag), not expired, not new, but the **name does not match**: +15 points.
-5. Total for the email: certificate 15 + no DKIM 5 + no DMARC 5 + tone 4.5 = 29.5, which rounds up to **30, Suspicious**.
+5. Total for the email: certificate 15 + no DKIM 5 + no DMARC 5 + tone 7.5 (score 3 x 2.5) = 32.5, which rounds up to **33, Suspicious**. (Before the session 7 tuning the tone gave 4.5, so it was 30.)
 
 This is a real result: the domain belongs to someone else and its server shows a hosting company's certificate. A browser would show a warning for this link too.
 

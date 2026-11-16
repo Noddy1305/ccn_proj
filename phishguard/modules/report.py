@@ -18,7 +18,21 @@ from modules.scoring import BANDS
 
 FIELDS = ("summary", "evidence_explained", "recommended_actions")
 MIN_WORDS, MAX_WORDS = 60, 320          # FR-7.2 asks for 120-200; this loose band only catches nonsense
-CONTRADICTS_VERDICT = re.compile(r"\b(?:is|looks|appears|seems)\s+(?:completely\s+|totally\s+)?(?:safe|genuine|legitimate|harmless)\b", re.I)
+# The text contradicts a Suspicious/Phishing verdict only when a sentence plainly calls THE EMAIL (or the verdict)
+# safe. A looser rule ("is legitimate" anywhere) threw away good reports that said "signatures that help prove it
+# is legitimate" and "no DMARC record to prove the email is legitimate" (found in the session 7 review).
+CLAIMS_SAFE = re.compile(
+    r"(?:\b(?:this|the)\s+(?:email|message|e-mail|mail)|\bverdict|\brating|^\s*it)\s+(?:is|looks|appears|seems)\s+"
+    r"(?:to\s+be\s+)?(?:completely\s+|totally\s+|probably\s+|likely\s+)?(?:safe|genuine|legitimate|harmless)\b(?!\s+to\b)",
+    re.I)
+NOT_A_CLAIM = re.compile(r"\b(?:prove|proof|confirm|verify|whether|if|not|cannot)\b|n't\b", re.I)
+
+
+def contradicts_verdict(text):
+    """True if any sentence says the email is safe / genuine / legitimate / harmless as a plain statement."""
+    return any(CLAIMS_SAFE.search(sentence) and not NOT_A_CLAIM.search(sentence)
+               for sentence in re.split(r"(?<=[.!?])\s+", text))
+
 
 ACTIONS = {
     "safe": "No action is needed. As with any email, think before you click, and open important sites by typing the address yourself.",
@@ -37,11 +51,13 @@ You are given a verdict, a score out of 100 and a list of findings that were ALR
 
 Stick strictly to the findings:
 - Use only facts written in the findings. Do not say who the email pretends to be, or what department it claims to be from, unless a finding says so.
+- You have NOT seen the email itself. Do not describe its topic, its story or what it asks the reader to do.
 - Keep each finding's meaning exactly. "Missing" or "none" is not "failed"; a lookalike link is not a lookalike sender.
 - Do not add reasons or causes that are not in the findings. Say what was found, not why it happened.
   Wrong: "DMARC failed because the policy was weak". Right: "The DMARC check failed".
 - Never mention points, scaling or arithmetic. Only the score out of 100 may appear as a number.
 - Say the score only as "X out of 100". Do not call it perfect, high or low.
+- The score measures RISK: 0 means no warning signs were found, 100 means the strongest evidence of phishing. Never call it a safety score.
 
 Write simple, calm English. 120 to 200 words in total across all three fields.
 Reply with JSON only, in this shape:
@@ -58,7 +74,8 @@ def findings_for_ai(result):
         evidence = mask_addresses(r["evidence"])
         if r["id"] == "tone_manipulation":
             evidence = "the wording of the email pressures the reader"
-        findings.append({"flag": mask_addresses(r["title"]), "points": r["points"],
+        # "(AI)" in the tone flag's title made the report AI write "AI-generated pressure tactics".
+        findings.append({"flag": mask_addresses(r["title"]).replace(" (AI)", ""), "points": r["points"],
                          "evidence": re.sub(r"policy p=\w+;?\s*", "", evidence)})
     return findings
 
@@ -89,13 +106,14 @@ def validate(answer, verdict):
     words = sum(len(v.split()) for v in text.values())
     if not MIN_WORDS <= words <= MAX_WORDS:
         raise LLMError(f"The AI report was {words} words, outside the allowed length.")
-    if verdict in ("suspicious", "phishing") and CONTRADICTS_VERDICT.search(" ".join(text.values())):
+    if verdict in ("suspicious", "phishing") and any(contradicts_verdict(v) for v in text.values()):
         raise LLMError("The AI report contradicted the verdict.")      # FR-7.3
     return text
 
 
 CHECK_TITLES = {"sender": "Sender (SPF, DKIM, DMARC)", "links": "Link and domain",
-                "certificate": "Certificate (TLS)", "tone": "Tone (AI)"}
+                "certificate": "Certificate (TLS)", "disguise": "Disguise (sender name, attachments, hidden links)",
+                "tone": "Tone (AI)"}
 
 
 def build_report_context(result, source, now=None):
