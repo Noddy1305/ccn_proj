@@ -10,7 +10,8 @@
   button { background: #2563eb; color: #fff; border: 0; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; }
   .error { background: #fee2e2; color: #991b1b; padding: .8rem; border-radius: 6px; }
   table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
-  th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: .4rem .5rem; vertical-align: top; word-break: break-all; }
+  th, td { text-align: left; border-bottom: 1px solid #e5e7eb; padding: .4rem .5rem; vertical-align: top; overflow-wrap: break-word; }
+  table.grid, .card table { table-layout: fixed; }   /* fixed column widths, so long evidence cannot squeeze the narrow columns */
   th { width: 11rem; color: #374151; }
   pre { background: #f9fafb; border: 1px solid #e5e7eb; padding: .7rem; white-space: pre-wrap; border-radius: 6px; }
   h2 { margin-top: 1.5rem; }
@@ -34,7 +35,7 @@
 </head>
 <body>
 <h1>PhishGuard-AI</h1>
-<p class="sub">Parser (M1), sender (M2) and link (M3) checks, with a rule-based verdict (M6). Tone and certificate checks come later.</p>
+<p class="sub">Parser (M1), sender (M2), link (M3) and AI tone (M5) checks, a rule-based verdict (M6) and an AI-written explanation (M7). The certificate check comes later.</p>
 
 <form method="post" action="/analyze" enctype="multipart/form-data">
   <p><label>Upload a .eml file: <input type="file" name="email" accept=".eml"></label>
@@ -56,6 +57,7 @@
 
 <h2>Points breakdown</h2>
 <table class="grid">
+  <colgroup><col style="width:9%"><col style="width:24%"><col style="width:14%"><col style="width:53%"></colgroup>
   <tr><th>Check</th><th>Red flag found</th><th>Points</th><th>Evidence</th></tr>
   {% for r in rows %}<tr><td>{{ r.check | capitalize }}</td><td>{{ r.title }}</td><td>+{{ '%g' % r.points }}</td><td>{{ r.evidence }}</td></tr>
   {% else %}<tr><td colspan="4">No red flags found: 0 points.</td></tr>{% endfor %}
@@ -63,10 +65,21 @@
     <td>Verdict: <span class="rate {{ band }}">{{ band | capitalize }}</span></td></tr>
 </table>
 {% if not_run %}<p class="note"><b>Could not run:</b> {{ not_run | join(', ') }} (added 0 points).</p>{% endif %}
-<p class="note">Verdict from fixed rules (M6). Only the sender (M2) and link (M3) checks are built so far, so the certificate and tone checks may add more points in later sessions.</p>
+<p class="note">Verdict from fixed rules (M6). The AI tone check adds at most 15 points. The certificate check (M4) comes in a later session.</p>
+
+{% if report %}
+<h2>Plain-English report</h2>
+<div class="card {{ {'safe': 'pass', 'suspicious': 'warn', 'phishing': 'fail'}[band] }}">
+  <h3 style="margin-top:0">What this email is</h3><p>{{ report.summary }}</p>
+  <h3>What gave it away</h3><p>{{ report.evidence_explained }}</p>
+  <h3>What you should do</h3><p>{{ report.recommended_actions }}</p>
+  <p class="note">{% if report.source == 'ai' %}The verdict above is rule-based. This explanation was written by an AI.{% else %}The verdict above is rule-based. This explanation was filled in from a template because the AI was not available{% if report.note %} ({{ report.note }}){% endif %}.{% endif %}</p>
+</div>
+{% endif %}
 
 <h2>How to read the score</h2>
 <table class="grid">
+  <colgroup><col style="width:12%"><col style="width:24%"><col style="width:64%"></colgroup>
   <tr><th>Score</th><th>Rating</th><th>What it means</th></tr>
   {% for key, name, rng, desc in bands %}<tr class="{{ key }} {{ 'now' if key == band }}"><td>{{ rng }}</td><td><b>{{ name }}</b>{% if key == band %} &larr; this email{% endif %}</td><td>{{ desc }}</td></tr>{% endfor %}
 </table>
@@ -74,9 +87,10 @@
 <h2>Check details</h2>
 {% for c in checks %}
 <div class="card {{ c.status }}">
-  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
+  <h2 style="margin-top:0">{{ {'sender': 'Sender (SPF, DKIM, DMARC)', 'links': 'Link and domain', 'tone': 'Tone (AI)'}.get(c.check, c.check | capitalize) }} check <span class="tag">{{ c.status }}</span></h2>
   {% if c.error %}<p>{{ c.error }}</p>{% endif %}
   <table>
+    <colgroup><col style="width:24%"><col style="width:20%"><col style="width:56%"></colgroup>
     <tr><th>{{ 'Domain' if c.check == 'links' else 'Test' }}</th><th>Result</th><th>Evidence</th></tr>
     {% for d in c.details %}<tr>
       <td>{{ d.name }}</td>

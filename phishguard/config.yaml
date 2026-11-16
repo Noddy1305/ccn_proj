@@ -27,11 +27,12 @@ points:
   domain_age_recent: 10     # registered 30-180 days ago
   domain_unresolved: 10     # domain does not exist in DNS
 
-# Tone check (M5, built later): points = weight x manipulation score (0-10), capped.
+# Tone check (M5): points = weight x manipulation score (0-10), capped.
 # The cap must stay below suspicious_from so the AI can never flag an email on its own.
 tone:
   weight: 1.5
   max_points: 15
+  min_score: 3              # scores below this are background noise (ordinary mail often gets 1-2) and count as 0
 
 # Verdict bands (PRD section 6). Score 0-100.
 thresholds:
@@ -43,3 +44,21 @@ links:
   max_domains: 10           # at most this many untrusted domains are looked up (keeps it fast)
   age_new_days: 30          # younger than this = high risk
   age_recent_days: 180      # younger than this = medium risk
+
+# LLM (M5 tone, M7 report text). One interface, switchable here (NFR-6).
+# The key is NEVER stored in this file: it is read from the environment variable named below.
+llm:
+  provider: nemotron        # nemotron (cloud) | ollama (local backup) | off (template text only, no tone score)
+  timeout_seconds: 8        # give up on the LLM after this long; the verdict still appears
+  temperature: 0            # as repeatable as the provider allows
+  tone_max_chars: 4000      # FR-5.1: only this much of the body is sent
+  tone_max_tokens: 400
+  report_max_tokens: 700
+  nemotron:
+    base_url: https://integrate.api.nvidia.com/v1
+    model: nvidia/nemotron-3.5-lightning-30b-a3b
+    api_key_env: LLM_API_KEY
+    disable_thinking: true  # this model "thinks" first and can run out of tokens before answering
+  ollama:
+    base_url: http://localhost:11434/v1
+    model: qwen2.5:3b       # not downloaded yet: run `ollama pull qwen2.5:3b` before using this provider

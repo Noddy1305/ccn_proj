@@ -403,7 +403,7 @@ The build runs in eight sessions; after session 5 the project is complete at P0 
 
 ## 15. Changes since v1 (as built, sessions 1-4)
 
-Status: M1, M2, M3 and M6 are built; M5, M7, M8 (full dashboard), M4 and offline mode are not. Decisions and deviations made during the build:
+Status: M1, M2, M3, M5, M6 and the M7 report text are built; the M7 PDF, M8 (full dashboard), M4 and offline mode are not. Decisions and deviations made during the build:
 
 | Area | v1 said | As built / decided | Why |
 | --- | --- | --- | --- |
@@ -416,5 +416,13 @@ Status: M1, M2, M3 and M6 are built; M5, M7, M8 (full dashboard), M4 and offline
 | Check card colour | Not specified | Red if any single flag is 20+ points, amber if any flag, green if none (`heavy_flag_points`) | One rule for all cards |
 | Rounding and cap | Cap at 100 | Halves round up; uncapped sum shown when capped | Predictable at the 30/60 lines; table always adds up |
 | Scoring weights | Fixed in check output | M6 re-reads weights from `config.yaml` by finding id | Session 7 can re-tune and re-score with no code changes |
-| Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`; not yet created: `certificate.py`, `tone.py`, `report.py`, `llm_client.py`, `report.html`, `evaluate.py` | Documentation and shared config helpers |
+| LLM model | Nemotron (name open) | `nvidia/nemotron-3.5-lightning-30b-a3b`, thinking mode switched off per request; local backup `qwen2.5:3b` (not yet downloaded) | Tested: about 1.7 s for a report-sized answer vs about 4.9 s for the 550B model, with no better text. Thinking mode can use all tokens and return an empty answer |
+| LLM client | Any provider via config | Standard-library HTTP only (no new package); `provider: nemotron / ollama / off`; the key is read from `LLM_API_KEY` at call time | Fewer dependencies, easy to explain |
+| Tone validation (FR-5.2) | JSON score and tactics | Every quote must appear in the text that was sent; unknown tactic names are dropped; with no verified quote the score becomes 0; score clamped to 0-10 | The PRD risk "LLM invents tactics" |
+| Tone floor | Points = 1.5 x score | Scores below 3 count as 0 (no finding, green card); the page still shows the raw score as "too low to count". `tone.min_score` in config | In the first live run a plain timetable email got 1/10, an amber card and a report calling it "slightly manipulative". Ordinary mail often scores 1-2 |
+| Report text (FR-7.2 to 7.4) | Template if invalid | Template also used if a field is missing, the length is outside 60-320 words, or a Suspicious/Phishing text calls the email safe; the page shows which source wrote the text and why | Keeps the AI from contradicting the verdict (FR-7.3) |
+| LLM timing | Not specified | 8 s timeout; tone runs beside M2 and M3; if the tone call could not reach the AI, the report call is skipped | Keeps one email near the 15 s budget when the network is down |
+| Privacy (PRV-2) | Mask addresses | Tone gets the subject and 4,000 characters of body with addresses masked (`***@domain`); the report gets verdict, score and masked findings only | Domains stay because they are the evidence |
+| Repeatability (FR-6.4) | Same input, same score | Holds for the rules. Tone at temperature 0 is close to repeatable but not guaranteed by the provider; session 6 will save AI answers for the demo emails | Honest limit to state in the viva |
+| Extra files | Section 8 structure | Added `README.md`, `AGENTS.md`, `notes/`, `modules/__init__.py`; now created: `tone.py`, `report.py` (text part only), `llm_client.py`; not yet created: `certificate.py`, `report.html`, `evaluate.py` | Documentation and shared config helpers |
 | Performance | 5 s per lookup, parallel | M2 and M3 run side by side; WHOIS gives up after 6 s; at most 10 untrusted domains looked up | Keep one email under 15 s |

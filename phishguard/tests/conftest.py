@@ -1,8 +1,8 @@
-"""Every test runs against a fake, empty DNS so tests never touch the internet."""
+"""Every test runs against a fake, empty DNS and a fake AI, so tests never touch the internet."""
 import pytest
 import spf
 
-from modules import links, sender
+from modules import links, llm_client, sender
 
 
 class FakeZone:
@@ -54,6 +54,30 @@ class FakeZone:
         if qtype in ("A", "AAAA"):
             return [((name, qtype), ip) for ip in self.a.get(name, [])]
         return []
+
+
+class FakeAI:
+    """Pretend AI. By default it is 'unreachable'; a test sets `.answers` (a function of system, user) to make it reply."""
+
+    def __init__(self):
+        self.answers, self.calls = None, []
+
+    def complete_json(self, system, user, max_tokens, config=None):
+        self.calls.append({"system": system, "user": user, "max_tokens": max_tokens})
+        if self.answers is None:
+            raise llm_client.LLMError("The AI service could not be reached.", unreachable=True)
+        result = self.answers(system, user)
+        if isinstance(result, Exception):
+            raise result
+        return result
+
+
+@pytest.fixture(autouse=True)
+def ai(monkeypatch):
+    """Safety net: no test can reach a real AI (and so none can spend or leak anything)."""
+    fake = FakeAI()
+    monkeypatch.setattr(llm_client, "complete_json", fake.complete_json)
+    return fake
 
 
 @pytest.fixture(autouse=True)

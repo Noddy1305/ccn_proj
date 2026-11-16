@@ -9,7 +9,7 @@ from email import policy
 from email.parser import BytesParser
 from email.utils import getaddresses
 
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 
 MAX_BYTES = 5 * 1024 * 1024  # FR-1.1
 
@@ -59,12 +59,29 @@ def find_sending_ip(received_headers):
     return ""
 
 
+BLOCK_TAGS = ["p", "div", "tr", "li", "ul", "ol", "table", "blockquote", "section", "article",
+              "header", "footer", "h1", "h2", "h3", "h4", "h5", "h6"]
+
+
 def _html_to_text(html):
+    """Readable text from HTML. Only block tags and <br> start a new line; inline tags such as <b>
+    and <a> stay in the same sentence (splitting at every tag broke sentences into pieces)."""
     soup = BeautifulSoup(html, "html.parser")
     for tag in soup(["script", "style"]):
         tag.decompose()
-    text = soup.get_text("\n")
-    return re.sub(r"\n\s*\n+", "\n\n", text).strip()
+    for comment in soup.find_all(string=lambda s: isinstance(s, Comment)):
+        comment.extract()
+    for piece in soup.find_all(string=True):
+        piece.replace_with(re.sub(r"\s+", " ", str(piece)))      # line breaks in the HTML source mean nothing
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+    for tag in soup.find_all(BLOCK_TAGS):
+        tag.insert_before("\n")
+        tag.insert_after("\n")
+    for cell in soup.find_all(["td", "th"]):
+        cell.insert_after(" ")                                   # keep table cells apart
+    text = re.sub(r" *\n *", "\n", soup.get_text(""))
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
 
 
 def _extract_links(html, plain):

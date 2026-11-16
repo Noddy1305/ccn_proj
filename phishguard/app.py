@@ -27,7 +27,7 @@ def _page(error=None, result=None, source="", selected="", status=200):
         "dashboard.html", samples=_sample_names(), selected=selected, source=source, error=error,
         parsed=result.get("parsed"), checks=result.get("checks", []), rows=result.get("rows", []),
         total=result.get("total", 0), band=result.get("band"), bands=result.get("bands", []),
-        raw_total=result.get("raw_total", 0), not_run=result.get("not_run", [])), status
+        raw_total=result.get("raw_total", 0), not_run=result.get("not_run", []), report=result.get("report")), status
 
 
 @app.get("/")

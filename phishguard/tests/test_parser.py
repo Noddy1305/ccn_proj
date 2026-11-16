@@ -47,6 +47,22 @@ def test_html_body_converted_to_text():
     assert "hall ticket" in p["body_text"] and "<b>" not in p["body_text"]
 
 
+def test_inline_tags_do_not_split_sentences_but_blocks_and_br_do():
+    from modules.parser import _html_to_text
+    text = _html_to_text("<p>Your <b>hall ticket</b> will be\n cancelled <a href='x'>now</a>.</p>"
+                         "<p>Second<br>line</p><table><tr><td>a</td><td>b</td></tr></table>"
+                         "<!-- hidden note --><script>evil()</script>")
+    assert "Your hall ticket will be cancelled now." in text
+    assert "Second\nline" in text and "a b" in text
+    assert "hidden" not in text and "evil" not in text and "\n\n\n" not in text
+
+
+def test_forged_sample_body_reads_as_whole_sentences():
+    body = load("forged.eml")["body_text"]
+    assert "will be cancelled within 24 hours" in " ".join(body.split())
+    assert "cancelled within 24 hours\n" not in body.replace("cancelled within 24 hours unless", "")  # not stranded on its own line
+
+
 def test_plain_text_urls_become_links():
     p = load("genuine.eml")
     assert p["body_source"] == "plain"

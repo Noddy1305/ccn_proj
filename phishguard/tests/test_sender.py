@@ -99,7 +99,24 @@ def test_spf_pass_for_attacker_domain_still_fails_dmarc_alignment(zone):
     assert "domain_mismatch" in ids(r)
 
 
+def test_spf_dns_timeout_is_explained_in_one_short_line(zone):
+    zone.broken = True
+    r = run(make_eml(auth="spf=fail smtp.mailfrom=srmist.edu.in; dkim=none; dmarc=fail (p=REJECT) header.from=srmist.edu.in"))
+    spf_detail = detail(r, "SPF")
+    assert spf_detail["result"] == "fail" and spf_detail["source"] == "reported by mail server"
+    assert "the DNS lookup timed out or failed" in spf_detail["evidence"] and "mail server reported spf=fail" in spf_detail["evidence"]
+    assert "Do53" not in spf_detail["evidence"] and "resolution lifetime" not in spf_detail["evidence"]
+
+
 # ---------- DMARC
+
+def test_dmarc_evidence_says_missing_not_a_dash_or_failed(zone):
+    zone.add_txt("attacker.com", "v=spf1 ip4:52.1.2.3 -all")
+    zone.add_txt("_dmarc.srmist.edu.in", "v=DMARC1; p=reject")
+    evidence = detail(run(make_eml(return_path="bounce@attacker.com")), "DMARC")["evidence"]
+    assert "SPF pass for attacker.com (passed but NOT aligned with From)" in evidence
+    assert "no DKIM found" in evidence and " - " not in evidence and "DKIM none" not in evidence
+
 
 def test_dmarc_falls_back_to_org_domain_record(zone):
     zone.add_txt("srmist.edu.in", "v=spf1 ip4:52.1.2.3 -all")

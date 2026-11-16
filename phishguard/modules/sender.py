@@ -115,7 +115,8 @@ def check_spf(parsed, auth, timeout):
             result, explanation = spf.check2(
                 i=ip, s=sender, h=_helo_for(parsed) or domain, timeout=timeout, querytime=timeout)
             reason = explanation
-            if result in ("temperror", "permerror"):
+            if result in ("temperror", "permerror"):    # keep the message short: the raw DNS error is long and unreadable
+                reason = "the DNS lookup timed out or failed" if result == "temperror" else "the domain's SPF record is invalid"
                 result = "error"
         except Exception as exc:  # DNS down etc.
             result, reason = "error", f"live lookup failed ({type(exc).__name__})"
@@ -214,6 +215,14 @@ def _align_word(result, ok):
     return "passed but NOT aligned with From" if result == "pass" else "did not pass"
 
 
+def _mechanism(name, res, ok):
+    """One short phrase for DMARC evidence. 'none' means nothing was published or signed, which is not a failure."""
+    if res["result"] == "none":
+        return f"no {name} found"
+    where = f" for {res['domain']}" if res["domain"] else ""
+    return f"{name} {res['result']}{where} ({_align_word(res['result'], ok)})"
+
+
 def fetch_dmarc(parsed, timeout):
     """Fetch the DMARC record (separate step so it can run beside the SPF and DKIM lookups)."""
     from_domain = domain_of(parsed["from"]["address"])
@@ -249,10 +258,7 @@ def check_dmarc(parsed, spf_res, dkim_res, auth, dmarc_lookup):
     spf_ok = spf_res["result"] == "pass" and _aligned(from_domain, spf_res["domain"], spf_strict)
     dkim_ok = dkim_res["result"] == "pass" and _aligned(from_domain, dkim_res["domain"], dkim_strict)
     detail = (f"From domain {from_domain}, policy p={policy}; "
-              f"SPF {spf_res['result']} for {spf_res['domain'] or '-'} "
-              f"({_align_word(spf_res['result'], spf_ok)}), "
-              f"DKIM {dkim_res['result']} for {dkim_res['domain'] or '-'} "
-              f"({_align_word(dkim_res['result'], dkim_ok)})")
+              f"{_mechanism('SPF', spf_res, spf_ok)}, {_mechanism('DKIM', dkim_res, dkim_ok)}")
     if spf_ok or dkim_ok:
         return {"result": "pass", "policy": policy, "source": LIVE, "evidence": detail}
     unknown = "error" in (spf_res["result"], dkim_res["result"])
